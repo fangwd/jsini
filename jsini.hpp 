@@ -1,0 +1,135 @@
+// Copyright (c) Weidong Fang
+
+#ifndef JSINI_HPP_
+#define JSINI_HPP_
+
+#include "jsini.h"
+#include <string>
+#include <iostream>
+
+namespace jsini {
+
+class Root;
+class Node;
+
+class Value {
+private:
+    Root *root_;
+    Node *node_;
+
+    Value(const Value &other);
+    Value &operator=(const Value &other);
+
+    Value(Root*, Node*);
+    void init(jsini_value_t *);
+
+    jsini_array_t *cast_array();
+    jsini_object_t *cast_object();
+
+    bool is_root() const;
+
+    inline bool is(uint8_t type) const {
+        return this->type() == type;
+    }
+
+    friend class Root;
+
+public:
+    Value(jsini_value_t *data = NULL);
+    Value(const char *filename);
+    Value(const std::string&);
+    Value(const char *s, size_t length);
+    ~Value();
+
+    uint8_t type() const;
+
+    inline bool is_null() const {
+        return is(JSINI_TNULL);
+    }
+
+    inline bool is_bool() const {
+        return is(JSINI_TBOOL);
+    }
+
+    inline bool is_number() const {
+        return is(JSINI_TINTEGER) || is(JSINI_TNUMBER);
+    }
+
+    inline bool is_string() const {
+        return is(JSINI_TSTRING);
+    }
+
+    inline bool is_array() const {
+        return is(JSINI_TARRAY);
+    }
+
+    inline bool is_object() const {
+        return is(JSINI_TOBJECT);
+    }
+
+    inline bool is_undefined() const {
+        return is(JSINI_UNDEFINED);
+    }
+
+    size_t size() const;
+
+    operator bool() const;
+    operator int() const;
+    operator double() const;
+    operator const char *() const;
+
+    bool operator==(bool);
+    bool operator==(int);
+    bool operator==(double);
+    bool operator==(const char *);
+    bool operator==(const Value &);
+
+    Value &operator=(bool);
+    Value &operator=(int);
+    Value &operator=(double);
+    Value &operator=(const char *);
+
+    Value& operator[](int index);
+    Value& operator[](const std::string&);
+    Value& operator[](const char *key);
+
+    Value &push(bool);
+    Value &push(int);
+    Value &push(double);
+    Value &push(const char *);
+
+    void remove(int index);
+    void remove(const char *key);
+
+    void dump(std::ostream& os = std::cout, int options = 0,
+            int indent = 4) const;
+
+    class Iterator {
+    private:
+        Value *value_;
+#       if JSINI_KEEP_KEYS
+        uint32_t data_;
+#       else
+        jsh_iterator_t *data_;
+#       endif
+        friend class Value;
+
+    public:
+        Iterator(Value *value=NULL) : value_(value), data_(0) {
+        }
+
+        Iterator& operator++(int);
+        bool operator!=(const Iterator&) const;
+        const char *key() const;
+        Value& value() const;
+    };
+
+    friend class Iterator;
+
+    Iterator begin();
+    Iterator end();
+};
+
+} // namespace jsini
+
+#endif // JSINI_HPP_
