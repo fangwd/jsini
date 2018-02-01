@@ -1,7 +1,7 @@
 A C/C++ library that parses json-like (including json) data. It comes with a C++ wrapper that makes accessing/manipulating JSON data in C++ easy and fun.
 
 ## Features
-- Very forgiving parser. Jsini parses a variety of json-link data that often appears in configuration files and other languages (in names like object, hash, dictionary, array, list, etc.). For example, the following data can be parsed:
+- Very forgiving parser. Jsini parses a variety of json-link data that often appears in configuration files and other programming languages (in names like object, hash, dictionary, array, list, etc.). For example, the following data can be parsed properly:
   ```
   {
     database: {
@@ -14,7 +14,7 @@ A C/C++ library that parses json-like (including json) data. It comes with a C++
   }
   ```
 
-- Order object keys is kept. The example above produces the following JSON object:
+- The order of object keys can be kept after parsing. For example, the example above produces the following result:
   ```
   {
     "database": {
@@ -26,12 +26,12 @@ A C/C++ library that parses json-like (including json) data. It comes with a C++
     "thread_count": 5
   }
   ```
-- Object keys can be sorted when exporting (similar to Python's `sort_keys` option in `json.dumps`).
-- No dependencies. The library is written in pure C and only requires standard C libraries.
-- Reusable components. The hash table, array and string buffer in the library can be used on their own without relying on other parts of the library. See `jsh.h`, `jsa.h` and `jsb.h` for the API.
+- Object keys can be optionally sorted when exporting (similar to Python's `sort_keys` option in their `json.dumps`).
+- No dependencies. The library is written in pure C and only requires the standard C runtime.
+- Reusable components. The hash table, array and string buffer in the source code can be used on their own without relying on other parts of the library. See `jsh.h`, `jsa.h` and `jsb.h` for their API.
 
 ## Usage
-Because of its ease of use, C++ wrapper is recommended to use the library (although it does not expose all functions provided by the library, e.g. parsing .ini files). The wrapper is fully contained in one header file `jsini.hpp`. See `tests/test.cpp` for usage examples.
+Because of its ease of use, the C++ wrapper is recommended whenever a suitable compiler is available (although currently it does not expose all functions provided by the library, e.g. parsing .ini files). The wrapper is fully contained in one header file `jsini.hpp`. See `tests/test.cpp` for usage examples.
 
 ## Parsing
 To parse a string that contains json-like data pass it to the constructor of `jsini::Value`:
@@ -98,7 +98,7 @@ assert(config["thread_count"].is_undefined());
 ```
 
 ### Iterating
-Arrays can be iterated through using integer indexes:
+Arrays can be iterated using integer indexes:
 ```cpp
 for (size_t i = 0; i < array.size(); i++) {
     jsini::Value &value = array[i];
@@ -107,7 +107,7 @@ for (size_t i = 0; i < array.size(); i++) {
 }
 ```
 
-Objects can be traversed using an iterator:
+Objects can be traversed using iterators:
 
 ```cpp
 jsini::Value::Iterator it = object.begin();
@@ -130,4 +130,7 @@ value.dump(std::cout, JSINI_PRETTY_PRINT, 4);
 // Same as above but with object keys sorted in output
 value.dump(std::cout, JSINI_PRETTY_PRINT|JSINI_SORT_KEYS, 4);
 ```
+
+## Bugs
+Please report any bugs to https://github.com/fangwd/jsini/issues
 
