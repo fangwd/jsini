@@ -512,7 +512,7 @@ void jsini_stringify(const jsini_value_t *value, jsb_t *sb, int options,
 void jsini_print(FILE *fp, const jsini_value_t *value, int options) {
     jsb_t sb;
     jsb_init(&sb);
-    jsini_stringify(value, &sb, options, 0);
+    jsini_stringify(value, &sb, options, 2);
     fwrite(sb.data, 1, sb.size, fp);
     jsb_clean(&sb);
 }
