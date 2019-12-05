@@ -9,7 +9,7 @@ SRCS=jsa.c jsb.c jsc.c jsh.c jsini.c jsini_json.c jsini_ini.c
 
 OBJS=$(SRCS:.c=.o)
 MAIN=jsini
-JSINI=libjsini.so libjsini.a
+JSINI=libjsini.a
 TESTS=test_jsh test_decode_utf8 test_cpp
 
 .PHONY: depend clean
@@ -23,7 +23,7 @@ $(MAIN): $(JSINI) main.o
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@
 
 $(JSINI): $(OBJS)
-	$(CC) -shared -o libjsini.so $(OBJS)
+	#$(CC) -shared -o libjsini.so $(OBJS)
 	ar -cvq libjsini.a $(OBJS)
 
 test_jsh: jsh.c tests/jsh.c
