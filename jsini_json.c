@@ -400,10 +400,12 @@ void jsini_stringify_real(const jsini_value_t *value, jsb_t *sb, int options,
         break;
     case JSINI_TOBJECT:
         jsb_append_char(sb, '{');
-        if ((options & JSINI_PRETTY_PRINT)!= 0) jsb_append_char(sb, '\n');
         {
             jsh_t *map = ((jsini_object_t *) value)->map;
             const jsh_iterator_t *it = jsh_first(map);
+            if ((options & JSINI_PRETTY_PRINT) != 0 && jsh_count(map) > 0) {
+                jsb_append_char(sb, '\n');
+            }
             if (options & JSINI_SORT_KEYS) {
                 uint32_t i;
                 jsa_t *a = jsa_create();
