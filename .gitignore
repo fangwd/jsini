@@ -1,0 +1,7 @@
+*.o
+jsini
+libjsini.a
+test_cpp
+test_decode_utf8
+test_jsh
+
