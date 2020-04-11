@@ -224,6 +224,10 @@ void jsb_strip(jsb_t *sb) {
     jsb_rstrip(sb);
 }
 
+int jsb_equals(jsb_t *a, jsb_t *b) {
+    return a->size == b->size && !memcmp(a->data, b->data, a->size);
+}
+
 /**
  * Quote and append a string to the buffer. Special characters, including “\”,
  * “'”, “"”, NUL (ASCII 0), “\n”, “\r”, and Control+Z, will be escaped in the

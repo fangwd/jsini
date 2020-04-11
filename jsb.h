@@ -38,6 +38,8 @@ int    jsb_resize(jsb_t *, size_t);
 int    jsb_save(jsb_t *, const char*);
 void   jsb_strip(jsb_t *);
 
+int    jsb_equals(jsb_t*, jsb_t*);
+
 #define jsb_space(sb) ((sb)->data + (sb)->size)
 #define jsb_space_size(sb) ((sb)->alloc_size + (sb)->size)
 #define jsb_last_char(sb) ((sb)->data[(sb)->size-1])
