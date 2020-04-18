@@ -58,14 +58,25 @@ int jsb_alloc(jsb_t * sb, size_t size) {
     return JSB_OK;
 }
 
-int jsb_append(jsb_t *sb, const char *s, size_t len) {
-    assert(sb != NULL);
+jsb_t *jsb_append(jsb_t *sb, const char *s, size_t len) {
+    int do_free;
+
+    if (sb == NULL) {
+        sb = jsb_create();
+        do_free = 1;
+    }
+    else {
+        do_free = 0;
+    }
 
     if (s) {
         if (len == 0) len = strlen(s);
         if (sb->size + len + 1 > sb->alloc_size) {
             if (jsb_alloc(sb, sb->size + len + 1) != JSB_OK) {
-                return JSB_ERROR;
+                if (do_free) {
+                    xfree(sb);
+                }
+                return NULL;
             }
         }
         memcpy(sb->data + sb->size, s, len);
@@ -73,7 +84,7 @@ int jsb_append(jsb_t *sb, const char *s, size_t len) {
         sb->data[sb->size] = '\0';
     }
 
-    return JSB_OK;
+    return sb;
 }
 
 int jsb_append_char(jsb_t * sb, const char c) {

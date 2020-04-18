@@ -26,7 +26,7 @@ void   jsb_clean(jsb_t *);
 void   jsb_free(jsb_t *);
 
 int    jsb_alloc(jsb_t * sb, size_t size);
-int    jsb_append(jsb_t *, const char *, size_t);
+jsb_t *jsb_append(jsb_t *, const char *, size_t);
 int    jsb_append_char(jsb_t *, const char);
 jsb_t *jsb_clear(jsb_t *);
 void   jsb_init(jsb_t *);
