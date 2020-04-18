@@ -43,6 +43,7 @@ int    jsb_equals(jsb_t*, jsb_t*);
 #define jsb_space(sb) ((sb)->data + (sb)->size)
 #define jsb_space_size(sb) ((sb)->alloc_size + (sb)->size)
 #define jsb_last_char(sb) ((sb)->data[(sb)->size-1])
+#define jsb_free_safe(sb) if (sb) jsb_free(sb)
 
 #ifdef __cplusplus
 }
