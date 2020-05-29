@@ -131,6 +131,7 @@ void jsini_set_null(jsini_object_t*, const char *);
 void jsini_set_bool(jsini_object_t*, const char *, int);
 void jsini_set_integer(jsini_object_t*, const char *, int64_t);
 void jsini_set_number(jsini_object_t*, const char *, double);
+jsini_object_t *jsini_set_buffer(jsini_object_t*, const char *, jsb_t *);
 const char *jsini_set_string(jsini_object_t*, const char *, const char *);
 jsini_value_t *jsini_set_value(jsini_object_t*, const char *, jsini_value_t*);
 void jsini_remove(jsini_object_t *, const char *);

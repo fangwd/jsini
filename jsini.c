@@ -477,6 +477,21 @@ void jsini_set_number(jsini_object_t *object, const char *key, double value) {
     jsini_attr(object, key)->value = (jsini_value_t*) jsini_alloc_number(value);
 }
 
+jsini_object_t *jsini_set_buffer(jsini_object_t *object, const char *key, jsb_t *sb) {
+    jsini_attr_t *attr = jsini_attr(object, key);
+    if (attr->value) {
+        jsini_free(attr->value);
+    }
+    if (sb != NULL) {
+        jsini_string_t *js = jsini_alloc_string(sb->data, sb->size);
+        attr->value = (jsini_value_t*) js;
+    }
+    else {
+        jsini_set_null(object, key);
+    }
+    return object;
+}
+
 const char *jsini_set_string(jsini_object_t *object, const char *key,
         const char *s) {
     jsini_attr_t *attr = jsini_attr(object, key);
