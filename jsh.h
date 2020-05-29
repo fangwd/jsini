@@ -18,7 +18,8 @@ jsh_t *jsh_create(uint32_t size, uint32_t (*hasher) (const void *),
         int (*tester) (const void *, const void *), float max_full);
 void jsh_clear(jsh_t *);
 void jsh_destroy(jsh_t *);
-void jsh_free_ex(jsh_t *, void (*free_item)(void *, void *));
+typedef void (*jsh_free_entry)(void *, void *);
+void jsh_free_ex(jsh_t *, jsh_free_entry);
 
 int jsh_put(jsh_t *, const void *key, const void *value);
 void *jsh_get(jsh_t *, const void *key);
