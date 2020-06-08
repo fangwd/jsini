@@ -119,6 +119,13 @@ void jsa_insert(jsa_t *a, uint32_t index, JSA_TYPE m) {
     }
 }
 
+void jsa_set(jsa_t *a, uint32_t index, JSA_TYPE m) {
+  if (index >= a->size) {
+    jsa_resize(a, index + 1);
+  }
+  a->item[index] = m;
+}
+
 void jsa_dedup(jsa_t *a) {
     uint32_t i, j, k, n = a->size;
 
