@@ -446,7 +446,7 @@ void jsini_array_set(jsini_array_t *array, uint32_t key, jsini_value_t *value) {
     if (old_value) {
         jsini_free(old_value);
     }
-    jsa_set(&array->data, key, value);
+    jsa_set(&array->data, key, (JSA_TYPE) value);
 }
 
 void jsini_array_remove(jsini_array_t*array, uint32_t key) {
