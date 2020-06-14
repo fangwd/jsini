@@ -34,7 +34,7 @@ void jsa_dedup(jsa_t * a);
 JSA_TYPE jsa_remove(jsa_t *a, uint32_t n);
 void jsa_remove_first(jsa_t *a, JSA_TYPE);
 
-#define jsa_get(a,i) ((a)->item[i])
+#define jsa_get(a,i) ((i) < (a)->size ? (a)->item[i] : 0)
 #define jsa_push(a,p) jsa_append(a,(JSA_TYPE)p)
 #define jsa_first(a) ((a)->size ? (a)->item[0] : 0)
 #define jsa_last(a) ((a)->size ? (a)->item[(a)->size - 1] : 0)
