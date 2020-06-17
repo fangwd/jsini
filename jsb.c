@@ -236,7 +236,9 @@ void jsb_strip(jsb_t *sb) {
 }
 
 int jsb_equals(jsb_t *a, jsb_t *b) {
-    return a->size == b->size && !memcmp(a->data, b->data, a->size);
+  if (a == b) return 1;
+  if (!a || !b) return 0;
+  return a->size == b->size && !memcmp(a->data, b->data, a->size);
 }
 
 /**
