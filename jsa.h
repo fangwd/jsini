@@ -33,6 +33,7 @@ int jsa_resize(jsa_t * a, uint32_t size);
 void jsa_dedup(jsa_t * a);
 JSA_TYPE jsa_remove(jsa_t *a, uint32_t n);
 void jsa_remove_first(jsa_t *a, JSA_TYPE);
+int jsa_index_of(jsa_t *, JSA_TYPE);
 
 #define jsa_get(a,i) ((i) < (a)->size ? (a)->item[i] : 0)
 #define jsa_push(a,p) jsa_append(a,(JSA_TYPE)p)

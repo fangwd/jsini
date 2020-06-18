@@ -189,6 +189,17 @@ jsa_t *jsa_clear(jsa_t *a) {
     return a;
 }
 
+int jsa_index_of(jsa_t *a, JSA_TYPE p)
+{
+  uint32_t i;
+  for (i = 0; i < a->size; i++) {
+    if (a->item[i] == p) {
+      return (int)i;
+    }
+  }
+  return -1;
+}
+
 #if TEST_DEDUP
 
 #include <stdio.h>
