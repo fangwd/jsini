@@ -22,6 +22,7 @@ typedef struct {
 } jsb_t;
 
 jsb_t *jsb_create();
+jsb_t *jsb_dup(jsb_t*);
 void   jsb_clean(jsb_t *);
 void   jsb_free(jsb_t *);
 

@@ -24,6 +24,12 @@ jsb_t *jsb_create() {
     return sb;
 }
 
+jsb_t *jsb_dup(jsb_t*s) {
+    jsb_t *t = jsb_create();
+    jsb_append(t, s->data, s->size);
+    return t;
+}
+
 void jsb_clean(jsb_t *sb) {
     if (sb->alloc_size > 0) {
         xfree(sb->data);
