@@ -112,6 +112,16 @@ void jsx_print_text(jsx_t *sx, const char *text, size_t size) {
     print_text(sx->buf, text, size);
 }
 
+void jsx_print_int(jsx_t *sx, int value) {
+    jsx_node_open(sx, 0, 0);
+    jsb_printf(sx->buf, "%d", value);
+}
+
+void jsx_print_double(jsx_t *sx, double value) {
+    jsx_node_open(sx, 0, 0);
+    jsb_printf(sx->buf, "%g", value);
+}
+
 void jsx_print_attr(jsx_t *sx, const char *name, size_t name_size,
                     const char *value, size_t value_size) {
     jsb_t *sb = sx->buf;

@@ -17,6 +17,8 @@ void jsx_print_attr(jsx_t *, const char *name, size_t name_size, const char *val
 void jsx_print_attr_int(jsx_t *, const char *name, size_t name_size, int value);
 void jsx_print_attr_double(jsx_t *, const char *name, size_t name_size, double value);
 void jsx_print_text(jsx_t *, const char *text, size_t size);
+void jsx_print_int(jsx_t *, int);
+void jsx_print_double(jsx_t *, double);
 void jsx_node_close(jsx_t *);
 
 #ifdef __cplusplus

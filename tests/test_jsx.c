@@ -52,9 +52,9 @@ static void test_text() {
     jsx_print_attr(sx, "k1", 2, "&", 1);
     jsx_print_text(sx, "foo", 3);
     jsx_node_open(sx, "b", 1);
-    jsx_print_text(sx, "bar", 3);
+    jsx_print_double(sx, 1.5);
     jsx_free(sx);
-    assert(!strcmp(sb->data, "<a k1=\"&amp;\">foo<b>bar</b></a>"));
+    assert(!strcmp(sb->data, "<a k1=\"&amp;\">foo<b>1.5</b></a>"));
     jsb_free(sb);
 }
 
