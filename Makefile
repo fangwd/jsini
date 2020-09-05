@@ -5,12 +5,12 @@ LFLAGS=
 LIBS=
 RM=rm -f
 
-SRCS=jsa.c jsb.c jsc.c jsh.c jsini.c jsini_json.c jsini_ini.c
+SRCS=jsa.c jsb.c jsc.c jsh.c jsini.c jsini_json.c jsini_ini.c jsx.c
 
 OBJS=$(SRCS:.c=.o)
 MAIN=jsini
 JSINI=libjsini.a
-TESTS=test_jsh test_decode_utf8 test_cpp
+TESTS=test_jsh test_decode_utf8 test_cpp test_jsx
 
 .PHONY: depend clean
 
@@ -34,6 +34,9 @@ test_decode_utf8: jsc.c tests/decode_utf8.c
 
 test_cpp: jsini.hpp jsini.h tests/test.cpp
 	g++ -g $(INCLUDES) $^ -o $@ libjsini.a $(LFLAGS) $(LIBS)
+
+test_jsx: tests/test_jsx.o
+	$(CC) $^ -o $@ libjsini.a $(LFLAGS) $(LIBS)
 
 clean:
 	$(RM) *.o *~ $(MAIN) $(JSINI) $(TESTS)
