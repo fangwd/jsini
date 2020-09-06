@@ -11,6 +11,8 @@ typedef struct jsx_s jsx_t;
 
 jsx_t *jsx_create(jsb_t *sb, int standalone);
 void jsx_free(jsx_t *);
+void jsx_begin(jsx_t *);
+void jsx_end(jsx_t *);
 
 void jsx_node_open(jsx_t *, const char *name, size_t size);
 void jsx_print_attr(jsx_t *, const char *name, size_t name_size, const char *value, size_t value_size);

@@ -17,33 +17,49 @@ struct jsx_s {
     jsa_t *stack;
     uint32_t stack_size;
     jsb_t *buf;
+    int standalone;
 };
 
 #define xmalloc malloc
 #define xfree free
+
+static void write_decl(jsx_t *sx) {
+    if (sx->standalone) {
+        jsb_append(sx->buf, XML_DECL2, sizeof XML_DECL2 - 1);
+    } else {
+        jsb_append(sx->buf, XML_DECL, sizeof XML_DECL - 1);
+    }
+}
 
 jsx_t *jsx_create(jsb_t *buf, int standalone) {
     jsx_t *sx = (jsx_t *)xmalloc(sizeof(*sx));
     sx->stack = jsa_create();
     sx->stack_size = 0;
     sx->buf = buf;
-    if (standalone) {
-        jsb_append(buf, XML_DECL2, sizeof XML_DECL2 - 1);
-    } else {
-        jsb_append(buf, XML_DECL, sizeof XML_DECL - 1);
-    }
+    sx->standalone = standalone;
+    write_decl(sx);
     return sx;
 }
 
 void jsx_free(jsx_t *sx) {
-    while (sx->stack_size > 0) {
-        jsx_node_close(sx);
-    }
+    jsx_end(sx);
     for (uint32_t i = 0; i < sx->stack->size; i++) {
         xfree((stack_entry *)jsa_get(sx->stack, i));
     }
     jsa_free(sx->stack);
     xfree(sx);
+}
+
+void jsx_begin(jsx_t *sx) {
+    sx->stack_size = 0;
+    jsb_clear(sx->buf);
+    write_decl(sx);
+}
+
+void jsx_end(jsx_t *sx) {
+    while (sx->stack_size > 0) {
+        jsx_node_close(sx);
+    }
 }
 
 void jsx_node_open(jsx_t *sx, const char *name, size_t size) {
@@ -110,16 +126,19 @@ static void print_text(jsb_t *sb, const char *begin, size_t length) {
 void jsx_print_text(jsx_t *sx, const char *text, size_t size) {
     jsx_node_open(sx, 0, 0);
     print_text(sx->buf, text, size);
+    jsx_node_close(sx);
 }
 
 void jsx_print_int(jsx_t *sx, int value) {
     jsx_node_open(sx, 0, 0);
     jsb_printf(sx->buf, "%d", value);
+    jsx_node_close(sx);
 }
 
 void jsx_print_double(jsx_t *sx, double value) {
     jsx_node_open(sx, 0, 0);
     jsb_printf(sx->buf, "%g", value);
+    jsx_node_close(sx);
 }
 
 void jsx_print_attr(jsx_t *sx, const char *name, size_t name_size,
