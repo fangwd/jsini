@@ -393,7 +393,7 @@ void jsini_stringify_real(const jsini_value_t *value, jsb_t *sb, int options,
         jsb_printf(sb, "%ld", ((jsini_integer_t*)value)->data);
         break;
     case JSINI_TNUMBER:
-        jsb_printf(sb, "%f", ((jsini_number_t*)value)->data);
+        jsb_printf(sb, "%g", ((jsini_number_t*)value)->data);
         break;
     case JSINI_TSTRING:
 		jsini_write_string(sb, &((jsini_string_t*)value)->data, options);
