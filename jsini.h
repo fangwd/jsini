@@ -167,8 +167,10 @@ int jsini_cast_int(const jsini_value_t *js);
 
 #define jsini_iter_key(it) ((const char*)(it)->key)
 #define jsini_iter_value(it) ((jsini_value_t*)((jsini_attr_t*) (it)->value)->value)
-#define jsini_iter_double(it) jsini_cast_int(jsini_iter_value(it))
-#define jsini_iter_int(it) jsini_cast_int(jsini_iter_value(it))
+#define jsini_iter_double(it) ((jsini_number_t*)((jsini_attr_t*) (it)->value)->value)
+#define jsini_iter_bool(it) ((jsini_bool_t*)((jsini_attr_t*) (it)->value)->value)
+#define jsini_iter_int(it) ((jsini_integer_t*)((jsini_attr_t*) (it)->value)->value)
+#define jsini_iter_string(it) ((jsini_string_t*)((jsini_attr_t*) (it)->value)->value)
 #define jsini_iter_array(it) ((jsini_array_t*)((jsini_attr_t*) (it)->value)->value)
 #define jsini_iter_object(it) ((jsini_object_t*)((jsini_attr_t*) (it)->value)->value)
 
