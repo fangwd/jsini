@@ -23,6 +23,9 @@ typedef struct Slot {
 typedef HASH    (*Hasher) (const void *);
 typedef int     (*Tester) (const void *, const void *);
 
+typedef HASH    (*Hasher2) (const void *, void*);
+typedef int     (*Tester2) (const void *, const void *, void*);
+
 struct jsh_t {
     Slot *slot;
     Slot *free_slot;
@@ -35,6 +38,7 @@ struct jsh_t {
 
     Hasher hasher;
     Tester tester;
+    void  *arg;
 };
 
 #define TINY_OK         0
@@ -86,8 +90,17 @@ jsh_create(uint32_t size, Hasher hasher, Tester tester, float max_full)
 
     t->hasher = hasher;
     t->tester = tester;
+    t->arg = NULL;
 
     return t;
+}
+
+jsh_t *
+jsh_create2(uint32_t n, Hasher2 h, Tester2 t, void* a, float f)
+{
+    jsh_t *ht = jsh_create(n, (Hasher) h, (Tester) t, f);
+    ht->arg = a;
+    return ht;
 }
 
 jsh_t *
@@ -120,10 +133,13 @@ jsh_clear(jsh_t *t)
     }
 }
 
+#define hash_key(t,k) ((t)->arg ? \
+    (((Hasher2)(t)->hasher)(k, (t)->arg)) : (t)->hasher(k))
+
 int
 jsh_exists(jsh_t *t, const void *key)
 {
-    HASH  h = t->hasher(key);
+    HASH  h = hash_key(t, key);
     Slot *n = jsh_locate(t, h, key);
     return n ? 1 : 0;
 }
@@ -146,13 +162,13 @@ jsh_locate(jsh_t *t, HASH  h, const void *k)
 }
 
 void *jsh_get(jsh_t *t, const void *key) {
-    HASH  h = t->hasher(key);
+    HASH  h = hash_key(t, key);
     Slot *n = jsh_locate(t, h, key);
     return n ? (void *) n->value : NULL;
 }
 
 const jsh_iterator_t *jsh_find(jsh_t *t, const void *key) {
-    HASH  h = t->hasher(key);
+    HASH  h = hash_key(t, key);
     return (jsh_iterator_t*)jsh_locate(t, h, key);
 }
 
@@ -222,7 +238,7 @@ jsh_reclaim(jsh_t *t, Slot *n)
 int
 jsh_remove(jsh_t *t, const void *k)
 {
-    HASH  h = t->hasher(k);
+    HASH  h = hash_key(t, k);
     Slot *m = HOME_OF(t, h);    /* tortoise */
     Slot *n = m;                /* hare */
 
@@ -310,7 +326,7 @@ jsh_resize(jsh_t *t, uint32_t size)
 
 int
 jsh_put(jsh_t *t, const void *key, const void *value) {
-    HASH  h = t->hasher(key);
+    HASH  h = hash_key(t, key);
     Slot *n = jsh_locate(t, h, key);
 
     if (n) {
@@ -327,7 +343,11 @@ jsh_test(jsh_t *t, Slot *slot, HASH hash, const void *key)
     if (slot->hash != hash) {
         return 0;
     }
-    return t->tester ? t->tester(slot->key, key) : slot->key == key;
+    return t->tester
+        ? t->arg
+            ? ((Tester2)t->tester)(slot->key, key, t->arg)
+            : t->tester(slot->key, key)
+        : slot->key == key;
 }
 
 int jsh_cmp_cstr(const void *s1, const void *s2) {

@@ -288,6 +288,8 @@ static void test__iterate() {
 
 }
 
+static void test__create2();
+
 int main(int argc, char **argv) {
     jsh_t *tiny = jsh_create(4, test_hasher, NULL, 0);
     test__insert(tiny, test_cases_1, "test_cases_1");
@@ -311,6 +313,8 @@ int main(int argc, char **argv) {
     jsh_destroy(tiny);
 
     test__iterate();
+
+    test__create2();
 
     printf("All tests passed\n");
 
@@ -336,3 +340,36 @@ static uint32_t test_hasher (const void *k) {
 
     return n;
 }
+
+static uint32_t hash_array_elems (const void *key, void *arg) {
+  const int* arr = (int*) key;
+  const int* idx = (int*) arg;
+  return (uint32_t) arr[idx[0]] + arr[idx[1]];
+}
+
+static int test_array_elems(const void *k1, const void *k2, void *arg) {
+  const int* arr1 = (int*) k1;
+  const int* arr2 = (int*) k2;
+  const int* idx = (int*) arg;
+  return arr1[idx[0]] == arr2[idx[0]] && arr1[idx[1]] == arr2[idx[1]];
+}
+
+static void test__create2() {
+  static int elems[2] = { 0, 2 };
+  jsh_t *ht = jsh_create2(10, hash_array_elems, test_array_elems, elems, .75);
+  static int data[5][3] = {
+    {1, 2, 3},
+    {0, 1, 4},
+    {2, 3, 0},
+    {1, 8, 1},
+    {0, 9, 2}
+  };
+  static int key[3] = {1, 0, 1};
+  for (int i = 0; i < 5; i++) {
+    jsh_put(ht, data[i], data[i]);
+  }
+  int *value = jsh_get(ht, key);
+  assert(value[1] == 8);
+  jsh_destroy(ht);
+}
+

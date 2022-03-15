@@ -16,6 +16,8 @@ typedef struct jsh_t jsh_t;
 jsh_t *jsh_create_simple(uint32_t size, int caseless);
 jsh_t *jsh_create(uint32_t size, uint32_t (*hasher) (const void *),
         int (*tester) (const void *, const void *), float max_full);
+jsh_t *jsh_create2(uint32_t size, uint32_t (*hasher) (const void *, void*),
+        int (*tester) (const void *, const void *, void*), void*, float);
 void jsh_clear(jsh_t *);
 void jsh_destroy(jsh_t *);
 typedef void (*jsh_free_entry)(void *, void *);
