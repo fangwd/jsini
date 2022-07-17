@@ -180,6 +180,10 @@ public:
         return ((jsini_string_t*) value)->data.data;
     }
 
+    inline jsini_value_t *raw() {
+        return node_->value();
+    }
+
     bool operator==(bool value) {
         return this->operator bool() == value;
     }
