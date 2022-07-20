@@ -13,6 +13,7 @@
 #ifdef _WIN32
 typedef unsigned __int32 u_int32_t;
 typedef unsigned __int32 uint32_t;
+#define strcasecmp _stricmp
 #endif
 
 typedef uint32_t HASH;

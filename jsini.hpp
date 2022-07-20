@@ -276,7 +276,7 @@ public:
         return *this;
     }
 
-    Value& operator[](int index) {
+    Value& operator[](uint32_t index) {
         jsini_array_t *array = cast_array();
 
         if (index >= jsini_array_size(array)) {
