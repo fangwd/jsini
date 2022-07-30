@@ -277,6 +277,10 @@ public:
     }
 
     Value& operator[](uint32_t index) {
+        return get(index);
+    }
+
+    Value& get(uint32_t index) {
         jsini_array_t *array = cast_array();
 
         if (index >= jsini_array_size(array)) {
