@@ -180,6 +180,10 @@ public:
         return ((jsini_string_t*) value)->data.data;
     }
 
+    inline jsini_value_t *raw() {
+        return node_->value();
+    }
+
     bool operator==(bool value) {
         return this->operator bool() == value;
     }
@@ -272,7 +276,11 @@ public:
         return *this;
     }
 
-    Value& operator[](int index) {
+    Value& operator[](uint32_t index) {
+        return get(index);
+    }
+
+    Value& get(uint32_t index) {
         jsini_array_t *array = cast_array();
 
         if (index >= jsini_array_size(array)) {

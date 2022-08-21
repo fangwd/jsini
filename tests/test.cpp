@@ -79,7 +79,7 @@ void test_parsing() {
 void test_types() {
     std::string data = "[1, null, 'string', {array: [], bool => false}]";
     jsini::Value value(data);
-    assert(value[0].is_number());
+    assert(value[(uint32_t)0].is_number());
     assert(value[1].is_null());
     assert(value[2].is_string());
     assert(value[3].is_object());
