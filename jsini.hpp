@@ -177,11 +177,27 @@ public:
 
     operator const char *() const {
         jsini_value_t *value = node_->value();
+        if (value->type != JSINI_TSTRING) {
+            return nullptr;
+        }
         return ((jsini_string_t*) value)->data.data;
     }
 
     inline jsini_value_t *raw() {
         return node_->value();
+    }
+
+    jsini_value_t *clone() {
+        auto value = node_->value();
+        if (value && value->type != JSINI_UNDEFINED) {
+            jsb_t sb;
+            jsb_init(&sb);
+            jsini_stringify(value, &sb, 0, 0);
+            auto result = jsini_parse_string(sb.data, sb.size);
+            jsb_clean(&sb);
+            return result;
+        }
+        return nullptr;
     }
 
     bool operator==(bool value) {
