@@ -33,7 +33,7 @@ test_decode_utf8: jsc.c tests/decode_utf8.c
 	$(CC) $(INCLUDES) $^ -o $@
 
 test_cpp: jsini.hpp jsini.h tests/test.cpp
-	g++ -g $(INCLUDES) tests/test.cpp -o $@ libjsini.a $(LFLAGS) $(LIBS)
+	g++ -std=c++11 -g $(INCLUDES) tests/test.cpp -o $@ libjsini.a $(LFLAGS) $(LIBS)
 
 test_jsx: tests/test_jsx.o
 	$(CC) $^ -o $@ libjsini.a $(LFLAGS) $(LIBS)
