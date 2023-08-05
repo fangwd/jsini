@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sstream>
 
+#define eps 0.0000001
+
 void test_parsing() {
     // JSON
     {
@@ -221,6 +223,21 @@ void test_dumping() {
     }
 }
 
+void test_type_cast() {
+    {
+        std::string data = R"js("hello")js";
+        jsini::Value value(data);
+        std::string hello = (std::string)(value);
+        assert(hello == "hello");
+    }
+    {
+        std::string data = R"js(3.14)js";
+        jsini::Value value(data);
+        float pi = (float)(value);
+        assert(abs(pi - 3.14) < eps);
+    }
+}
+
 int main() {
     test_parsing();
     test_types();
@@ -228,6 +245,7 @@ int main() {
     test_removing();
     test_iterating();
     test_dumping();
+    test_type_cast();
 
     return 0;
 }

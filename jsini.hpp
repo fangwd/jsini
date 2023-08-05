@@ -175,12 +175,28 @@ public:
         return jsini_cast_double(value);
     }
 
+    operator float() const {
+        jsini_value_t *value = node_->value();
+        return (float) jsini_cast_double(value);
+    }
+
     operator const char *() const {
         jsini_value_t *value = node_->value();
         if (value->type != JSINI_TSTRING) {
             return nullptr;
         }
         return ((jsini_string_t*) value)->data.data;
+    }
+
+    operator std::string() const {
+        std::string s;
+        jsini_value_t *value = node_->value();
+        if (value->type != JSINI_TSTRING) {
+            return s;
+        }
+        jsb_t* sb = &((jsini_string_t*) value)->data;
+        s.append(sb->data, sb->size);
+        return s;
     }
 
     inline jsini_value_t *raw() {
