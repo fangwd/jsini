@@ -199,6 +199,66 @@ public:
         return s;
     }
 
+    int to(bool &dst) const {
+        jsini_value_t *value = node_->value();
+        if (value->type != JSINI_TBOOL) {
+            return JSINI_ERROR;
+        }
+        dst = (bool)((jsini_bool_t *)value)->data;
+        return JSINI_OK;
+    }
+
+    int to(int &dst) const {
+        jsini_value_t *value = node_->value();
+        if (value->type != JSINI_TINTEGER) {
+            return JSINI_ERROR;
+        }
+        dst = ((jsini_integer_t *)value)->data;
+        return JSINI_OK;
+    }
+
+    int to(double &dst) const {
+        jsini_value_t *value = node_->value();
+        if (value->type != JSINI_TINTEGER && value->type != JSINI_TNUMBER) {
+            return JSINI_ERROR;
+        }
+        dst = jsini_cast_double(value);
+        return JSINI_OK;
+    }
+
+    int to(float &dst) const {
+        double dval;
+        if (int error = to(dval)) {
+            return error;
+        }
+        dst = (float)dval;
+        return JSINI_OK;
+    }
+
+    int to(const char *&dst) const {
+        jsini_value_t *value = node_->value();
+        if (value->type == JSINI_TNULL) {
+            dst = nullptr;
+            return JSINI_OK;
+        }
+        if (value->type != JSINI_TSTRING) {
+            return JSINI_ERROR;
+        }
+        dst = ((jsini_string_t *)value)->data.data;
+        return JSINI_OK;
+    }
+
+    int to(std::string &dst) const {
+        jsini_value_t *value = node_->value();
+        if (value->type != JSINI_TSTRING) {
+            return JSINI_ERROR;
+        }
+        dst.clear();
+        const jsb_t *sb = &((jsini_string_t *)value)->data;
+        dst.append(sb->data, sb->size);
+        return JSINI_OK;
+    }
+
     inline jsini_value_t *raw() {
         return node_->value();
     }

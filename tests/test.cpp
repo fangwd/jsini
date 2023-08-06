@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-#define eps 0.0000001
+#define eps 0.0001
 
 void test_parsing() {
     // JSON
@@ -238,6 +238,110 @@ void test_type_cast() {
     }
 }
 
+void test_to() {
+    // bool
+    {
+        jsini::Value value(std::string("1"));
+        bool dst;
+        assert(value.to(dst) == JSINI_ERROR);
+    }
+    {
+        jsini::Value value(std::string("true"));
+        bool dst;
+        assert(value.to(dst) == JSINI_OK);
+        assert(dst);
+    }
+
+    // int
+    {
+        jsini::Value value(std::string("1.0"));
+        int dst;
+        assert(value.to(dst) == JSINI_ERROR);
+    }
+    {
+        jsini::Value value(std::string("1"));
+        int dst;
+        assert(value.to(dst) == JSINI_OK);
+        assert(dst == 1);
+    }
+
+    // double
+    {
+        jsini::Value value(std::string("true"));
+        double dst;
+        assert(value.to(dst) == JSINI_ERROR);
+    }
+    {
+        jsini::Value value(std::string("1"));
+        double dst;
+        assert(value.to(dst) == JSINI_OK);
+        assert(abs(dst - 1) < eps);
+    }
+    {
+        jsini::Value value(std::string("1.1"));
+        double dst;
+        assert(value.to(dst) == JSINI_OK);
+        assert(abs(dst - 1.1) < eps);
+    }
+
+    // float
+    {
+        jsini::Value value(std::string("true"));
+        float dst;
+        assert(value.to(dst) == JSINI_ERROR);
+    }
+    {
+        jsini::Value value(std::string("1"));
+        float dst;
+        assert(value.to(dst) == JSINI_OK);
+        assert(abs(dst - 1) < eps);
+    }
+    {
+        jsini::Value value(std::string("1.1"));
+        float dst;
+        assert(value.to(dst) == JSINI_OK);
+        assert(abs(dst - 1.1) < eps);
+    }
+
+    // const char *
+    {
+        jsini::Value value(std::string("null"));
+        const char *dst = "";
+        assert(value.to(dst) == JSINI_OK);
+        assert(dst == nullptr);
+    }
+    {
+        jsini::Value value(std::string("1"));
+        const char *dst;
+        assert(value.to(dst) == JSINI_ERROR);
+    }
+    {
+        jsini::Value value(std::string("\"hello\""));
+        const char *dst;
+        assert(value.to(dst) == JSINI_OK);
+        assert(dst == std::string("hello"));
+    }
+
+    // std::string
+    {
+        jsini::Value value(std::string("null"));
+        std::string dst;
+        assert(value.to(dst) == JSINI_ERROR);
+    }
+    {
+        jsini::Value value(std::string("1"));
+        std::string dst;
+        assert(value.to(dst) == JSINI_ERROR);
+    }
+    {
+        jsini::Value value(std::string("\"hello\""));
+        std::string dst;
+        assert(value.to(dst) == JSINI_OK);
+        assert(dst == "hello");
+    }
+
+}
+
 int main() {
     test_parsing();
     test_types();
@@ -246,6 +350,7 @@ int main() {
     test_iterating();
     test_dumping();
     test_type_cast();
+    test_to();
 
     return 0;
 }
