@@ -1,8 +1,9 @@
-#include "jsini.hpp"
-
 #include <assert.h>
+
 #include <iostream>
 #include <sstream>
+
+#include "jsini.hpp"
 
 #define eps 0.0001
 
@@ -114,7 +115,6 @@ void test_building() {
     assert(value.size() == 2);
     assert(value["database"]["host"] == "localhost");
     assert(value["thread_count"] == 8);
-
 }
 
 void test_removing() {
@@ -155,7 +155,7 @@ void test_iterating() {
     jsini::Value::Iterator it = value.begin();
     size_t n = 0;
     while (it != value.end()) {
-#       if JSINI_KEEP_KEYS
+#if JSINI_KEEP_KEYS
         if (n == 0) {
             assert(it.key() == std::string("a"));
             assert(it.value() == 1);
@@ -163,7 +163,7 @@ void test_iterating() {
             assert(it.key() == std::string("b"));
             assert(it.value() == 2);
         }
-#       endif
+#endif
         it++;
         n++;
     }
@@ -173,16 +173,16 @@ void test_iterating() {
     array.push(4);
     array.remove(0);
     for (size_t i = 0; i < array.size(); i++) {
-        jsini::Value &value = array[i];
-        assert(value == (int )i + 2);
+        jsini::Value& value = array[i];
+        assert(value == (int)i + 2);
     }
 }
 
-static std::string to_string(jsini::Value& value, int options=0, int indent=0) {
+static std::string to_string(jsini::Value& value, int options = 0, int indent = 0) {
     std::stringstream ss;
     value.dump(ss, options, indent);
-    //value.dump(std::cout, options, indent);
-    //std::cout << '\n';
+    // value.dump(std::cout, options, indent);
+    // std::cout << '\n';
     return ss.str();
 }
 
@@ -195,21 +195,18 @@ void test_dumping() {
         value["break"] = false;
         value.remove("continue");
 
-#if     JSINI_KEEP_KEYS
-        assert(to_string(value) ==
-                "{\"a\":1,\"b\":2,\"c\":{\"d\":3,\"e\":4},\"break\":false}");
+#if JSINI_KEEP_KEYS
+        assert(to_string(value) == "{\"a\":1,\"b\":2,\"c\":{\"d\":3,\"e\":4},\"break\":false}");
 #endif
 
-        assert(to_string(value, JSINI_SORT_KEYS) ==
-                "{\"a\":1,\"b\":2,\"break\":false,\"c\":{\"d\":3,\"e\":4}}");
+        assert(to_string(value, JSINI_SORT_KEYS) == "{\"a\":1,\"b\":2,\"break\":false,\"c\":{\"d\":3,\"e\":4}}");
 
-        assert(to_string(value, JSINI_PRETTY_PRINT|JSINI_SORT_KEYS, 1) ==
-                "{\n \"a\": 1,\n \"b\": 2,\n \"break\": false,\n \"c\": {\n  \"d\": 3,\n  \"e\": 4\n }\n}");
+        assert(to_string(value, JSINI_PRETTY_PRINT | JSINI_SORT_KEYS, 1) ==
+               "{\n \"a\": 1,\n \"b\": 2,\n \"break\": false,\n \"c\": {\n  \"d\": 3,\n  \"e\": 4\n }\n}");
 
-#if     JSINI_KEEP_KEYS
+#if JSINI_KEEP_KEYS
         value.remove("b");
-        assert(to_string(value) ==
-                "{\"a\":1,\"c\":{\"d\":3,\"e\":4},\"break\":false}");
+        assert(to_string(value) == "{\"a\":1,\"c\":{\"d\":3,\"e\":4},\"break\":false}");
         value.remove("c");
         assert(to_string(value) == "{\"a\":1,\"break\":false}");
 #endif
@@ -217,8 +214,7 @@ void test_dumping() {
         {
             jsini::Value value(std::string("[1,[2,3,[4],[]]]"));
             assert(to_string(value) == "[1,[2,3,[4],[]]]");
-            assert(to_string(value, JSINI_PRETTY_PRINT, 1) ==
-                    "[\n 1,\n [\n  2,\n  3,\n  [\n   4\n  ],\n  []\n ]\n]");
+            assert(to_string(value, JSINI_PRETTY_PRINT, 1) == "[\n 1,\n [\n  2,\n  3,\n  [\n   4\n  ],\n  []\n ]\n]");
         }
     }
 }
@@ -264,6 +260,18 @@ void test_to() {
         assert(value.to(dst) == JSINI_OK);
         assert(dst == 1);
     }
+    {
+        jsini::Value value(std::string("1"));
+        size_t dst;
+        assert(value.to(dst) == JSINI_OK);
+        assert(dst == 1);
+    }
+    {
+        jsini::Value value(std::string("1"));
+        long dst;
+        assert(value.to(dst) == JSINI_OK);
+        assert(dst == 1);
+    }
 
     // double
     {
@@ -306,18 +314,18 @@ void test_to() {
     // const char *
     {
         jsini::Value value(std::string("null"));
-        const char *dst = "";
+        const char* dst = "";
         assert(value.to(dst) == JSINI_OK);
         assert(dst == nullptr);
     }
     {
         jsini::Value value(std::string("1"));
-        const char *dst;
+        const char* dst;
         assert(value.to(dst) == JSINI_ERROR);
     }
     {
         jsini::Value value(std::string("\"hello\""));
-        const char *dst;
+        const char* dst;
         assert(value.to(dst) == JSINI_OK);
         assert(dst == std::string("hello"));
     }
@@ -339,7 +347,273 @@ void test_to() {
         assert(value.to(dst) == JSINI_OK);
         assert(dst == "hello");
     }
+}
 
+namespace ns1 {
+struct OrderItem {
+    int quantity;
+    int from_json(jsini::Value& value) { return value["quantity"].to(quantity); }
+};
+
+struct Order {
+    int id;
+    std::vector<OrderItem*> items;
+    ~Order() {
+        for (auto& item : items) {
+            delete item;
+        }
+    }
+    int from_json(jsini::Value& value) {
+        int error = 0;
+        if ((error = value["id"].to(id))) {
+            return error;
+        }
+        return value["items"].to(items, [](jsini::Value& value, int& error) -> OrderItem* {
+            if (value.is_null()) {
+                return nullptr;
+            }
+            auto item = new OrderItem();
+            error = item->from_json(value);
+            return item;
+        });
+    }
+};
+
+}  // namespace ns1
+
+static void test_vector_of_pointers() {
+    jsini::Value value(std::string(R"json(
+        {
+            id: 100,
+            items: [
+                {
+                    quantity: 10
+                },
+                {
+                    quantity: 20
+                },
+                null
+            ]
+        }
+    )json"));
+
+    ns1::Order order;
+    assert(order.from_json(value) == 0);
+    assert(order.id == 100);
+    assert(order.items.size() == 3);
+    assert(order.items[0]->quantity == 10);
+    assert(order.items[1]->quantity == 20);
+    assert(order.items[2] == nullptr);
+}
+
+namespace ns2 {
+struct OrderItem {
+    int quantity = 0;
+    int from_json(jsini::Value& value) {
+        if (!value.is_object()) {
+            return 1;
+        }
+        return value["quantity"].to(quantity);
+    }
+};
+
+struct Order {
+    int id;
+    std::vector<OrderItem> items;
+    int from_json(jsini::Value& value) {
+        if (!value.is_object()) {
+            return 1;
+        }
+        int error = 0;
+        if ((error = value["id"].to(id))) {
+            return error;
+        }
+        return value["items"].to(items, [](jsini::Value& value, int& error) {
+            OrderItem item;
+            error = item.from_json(value);
+            return item;
+        });
+    }
+};
+
+}  // namespace ns2
+
+static void test_vector_of_objects() {
+    {
+        jsini::Value value(std::string(R"json(
+        {
+            id: 100,
+            items: [
+                {
+                    quantity: 10
+                },
+                {
+                    quantity: 20
+                },
+            ]
+        }
+    )json"));
+
+        ns2::Order order;
+        assert(order.from_json(value) == 0);
+        assert(order.id == 100);
+        assert(order.items.size() == 2);
+        assert(order.items[0].quantity == 10);
+        assert(order.items[1].quantity == 20);
+    }
+    {
+        jsini::Value value(std::string(R"json(
+        {
+            id: 100,
+            items: [
+                {
+                    quantity: 10
+                },
+                {
+                    qty: 20
+                },
+            ]
+        }
+    )json"));
+
+        ns2::Order order;
+        assert(order.from_json(value) == JSINI_ERROR);
+        assert(order.id == 100);
+        assert(order.items.size() == 2);
+        assert(order.items[0].quantity == 10);
+        assert(order.items[1].quantity == 0);
+    }
+}
+
+static void test_vector() {
+    test_vector_of_pointers();
+    test_vector_of_objects();
+}
+
+namespace ns3 {
+
+struct Order {
+    int quantity;
+    int from_json(jsini::Value& value) {
+        if (!value.is_object()) {
+            return 1;
+        }
+        return value["quantity"].to(quantity);
+    }
+};
+
+struct Product {
+    std::string code;
+    std::vector<Order> orders;
+    int from_json(jsini::Value& value) {
+        if (!value.is_object()) {
+            return 1;
+        }
+        int err = value["code"].to(code);
+        if (err) return err;
+        return value["orders"].to(orders, [](jsini::Value& value, int& error) {
+            Order order;
+            error = order.from_json(value);
+            return order;
+        });
+    }
+};
+
+}  // namespace ns3
+
+static void test_to_map() {
+    std::string json_text = R"json(
+            {
+                'p-1': {
+                    code: 'p-1',
+                    orders: [
+                        {
+                            quantity: 10
+                        },
+                        {
+                            quantity: 20
+                        },
+                    ]
+                },
+                'p-2': {
+                    code: 'p-2',
+                    orders: [
+                        {
+                            quantity: 30
+                        },
+                        {
+                            quantity: 40
+                        },
+                    ]
+                },
+            })json";
+
+    // 1) it parses objects
+    {
+        jsini::Value value(json_text);
+        std::map<std::string, ns3::Product> map1;
+        int err = value.to(map1, [](jsini::Value& value, int& error) {
+            ns3::Product p;
+            error = p.from_json(value);
+            return p;
+        });
+        assert(err == 0);
+        assert(map1.size() == 2);
+        assert(map1["p-1"].orders[0].quantity == 10);
+        assert(map1["p-2"].orders[1].quantity == 40);
+    }
+
+    // 2) it parses pointers
+    {
+        std::string json_text2 = json_text.substr(0, json_text.find_last_of('\n')) + R"json(
+            ,"p-3": null})json";
+        jsini::Value value(json_text2);
+        std::map<std::string, ns3::Product*> map1;
+        int err = value.to(map1, [](jsini::Value& value, int& error) {
+            if (value.is_null()) {
+                return (ns3::Product*)nullptr;
+            }
+            auto p = new ns3::Product();
+            error = p->from_json(value);
+            return p;
+        });
+        assert(err == 0);
+        assert(map1.size() == 3);
+        assert(map1["p-1"]->code == "p-1");
+        assert(map1["p-2"]->orders[0].quantity == 30);
+        const auto& it = map1.find("p-3");
+        assert(it != map1.end());
+        assert(it->second == nullptr);
+        for (auto& it : map1) {
+            delete it.second;
+        }
+    }
+
+    // 3) it reports errors of wrong object types
+    {
+        std::string json_text2 = json_text.substr(0, json_text.find_last_of('\n')) + ",\"p-3\": []}";
+        jsini::Value value(json_text2);
+        std::map<std::string, ns3::Product*> map1;
+        int err = value.to(map1, [](jsini::Value& value, int& error) {
+            if (value.is_null()) {
+                return (ns3::Product*)nullptr;
+            }
+            auto p = new ns3::Product();
+            error = p->from_json(value);
+            if (error) {
+                delete p;
+                return (ns3::Product*)nullptr;
+            }
+            return p;
+        });
+        assert(err != 0);
+        const auto& it = map1.find("p-3");
+        assert(it != map1.end());
+        assert(it->second == nullptr);
+        for (auto& it : map1) {
+            delete it.second;
+        }
+    }
 }
 
 int main() {
@@ -351,6 +625,8 @@ int main() {
     test_dumping();
     test_type_cast();
     test_to();
+    test_vector();
+    test_to_map();
 
     return 0;
 }

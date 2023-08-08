@@ -6,6 +6,9 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+#include <vector>
+#include <map>
+#include <functional>
 
 #include "jsini.h"
 
@@ -208,12 +211,21 @@ public:
         return JSINI_OK;
     }
 
-    int to(int &dst) const {
-        jsini_value_t *value = node_->value();
-        if (value->type != JSINI_TINTEGER) {
-            return JSINI_ERROR;
+    template<class T>
+    int to(T &dst) const {
+        if (type() == JSINI_TINTEGER) {
+            dst = (T)((jsini_integer_t *)node_->value())->data;
+            return JSINI_OK;
         }
-        dst = ((jsini_integer_t *)value)->data;
+        return JSINI_ERROR;
+    }
+
+    int to(float &dst) const {
+        double dval;
+        if (int error = to(dval)) {
+            return error;
+        }
+        dst = (float)dval;
         return JSINI_OK;
     }
 
@@ -223,15 +235,6 @@ public:
             return JSINI_ERROR;
         }
         dst = jsini_cast_double(value);
-        return JSINI_OK;
-    }
-
-    int to(float &dst) const {
-        double dval;
-        if (int error = to(dval)) {
-            return error;
-        }
-        dst = (float)dval;
         return JSINI_OK;
     }
 
@@ -256,6 +259,38 @@ public:
         dst.clear();
         const jsb_t *sb = &((jsini_string_t *)value)->data;
         dst.append(sb->data, sb->size);
+        return JSINI_OK;
+    }
+
+    template <class V, class F>
+    int to(std::vector<V> &dst, F parse) {
+        if (type() != JSINI_TARRAY) {
+            return JSINI_ERROR;
+        }
+        dst.clear();
+        int err = 0;
+        for (size_t i = 0; i < size(); i++) {
+            dst.push_back(parse(get(i), err));
+            if (err != JSINI_OK) {
+                return err;
+            }
+        }
+        return JSINI_OK;
+    }
+
+    template <class V, class F, class K=std::string>
+    int to(std::map<K,V> &dst, F parse) {
+        if (type() != JSINI_TOBJECT) {
+            return JSINI_ERROR;
+        }
+        dst.clear();
+        int err = 0;
+        for (Value::Iterator it = begin(); it != end(); it++) {
+            dst[K(it.key())] = parse(it.value(), err);
+            if (err != JSINI_OK) {
+                return err;
+            }
+        }
         return JSINI_OK;
     }
 
