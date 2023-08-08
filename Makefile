@@ -33,6 +33,7 @@ test_decode_utf8: jsc.c tests/decode_utf8.c
 	$(CC) $(INCLUDES) $^ -o $@
 
 test_cpp: jsini.hpp jsini.h tests/test.cpp
+  # -fno-elide-constructors
 	g++ -std=c++11 -g $(INCLUDES) tests/test.cpp -o $@ libjsini.a $(LFLAGS) $(LIBS)
 
 test_jsx: tests/test_jsx.o
@@ -43,5 +44,5 @@ clean:
 
 install:
 	mkdir -p /usr/local/include/jsini
-	cp *.h /usr/local/include/jsini
+	cp *.h *.hpp /usr/local/include/jsini
 	cp $(JSINI)  /usr/local/lib
