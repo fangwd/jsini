@@ -20,7 +20,19 @@ int jsl_decode_json_string(jsl_t *lex, jsb_t *s);;
 static jsini_array_t *jsini_read_json_array(jsl_t *lex) {
     jsini_array_t *array = jsini_alloc_array();
 
-    assert(*lex->input == '[');
+    char array_open = *lex->input;
+    char array_end;
+
+    switch (array_open) {
+        case '[':
+            array_end = ']';
+            break;
+        case '(':
+            array_end = ')';
+            break;
+        default:
+            assert(0);
+    }
 
     lex->error_char = *lex->input++;
 
@@ -34,7 +46,7 @@ static jsini_array_t *jsini_read_json_array(jsl_t *lex) {
             goto fail;
         }
 
-        if (*lex->input == ']') {
+        if (*lex->input == array_end) {
             lex->input++;
             return array;
         }
@@ -165,6 +177,7 @@ static jsini_value_t *jsini_read_json(jsl_t *lex) {
     case '{':
         return (jsini_value_t*)jsini_read_json_object(lex);
     case '[':
+    case '(':
         return (jsini_value_t*)jsini_read_json_array(lex);
     case '"':
     case '\'':
@@ -202,7 +215,6 @@ int jsl_decode_json_string(jsl_t *lex, jsb_t *s) {
         char c = *lex->input++;
         if (c == quote) {
             return JSINI_OK;
-            break;
         }
         else if (c == '\\') {
             if (lex->input == lex->input_end) {

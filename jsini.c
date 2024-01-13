@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #define xmalloc malloc
 #define xfree free
@@ -196,16 +197,19 @@ jsini_value_t *jsl_read_primitive(jsl_t *lex) {
     case '.':
         value = (jsini_value_t*) jsl_read_number(lex);
         break;
+    case 'T':
     case 't':
         if (jsl_skip_keyword(lex, "true", NULL)) {
             value = (jsini_value_t*) jsini_alloc_bool(1);
         }
         break;
+    case 'F':
     case 'f':
         if (jsl_skip_keyword(lex, "false", NULL)) {
             value = (jsini_value_t*) jsini_alloc_bool(0);
         }
         break;
+    case 'N':
     case 'n':
         if (jsl_skip_keyword(lex, "null", NULL)) {
             value = jsini_alloc_null();
@@ -249,7 +253,7 @@ int jsl_skip_keyword(jsl_t *lex, const char *keyword, int (*is_break)(int)) {
     const char *next = lex->input;
 
     while (*keyword && (next != lex->input_end)) {
-        if (*next != *keyword) {
+        if (tolower(*next) != tolower(*keyword)) {
             return 0;
         }
         next++;

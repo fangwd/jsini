@@ -77,6 +77,43 @@ void test_parsing() {
         jsini::Value value(data);
         assert(value[2]["b"] == "c");
     }
+
+    // Array
+    {
+        std::string data = "( )";
+        jsini::Value value(data);
+        assert(value.is_array());
+        assert(value.size() == 0);
+    }
+
+    {
+        std::string data = "(, )";
+        jsini::Value value(data);
+        assert(value.is_array());
+        assert(value.size() == 0);
+    }
+
+    {
+        std::string data = "(1, 2,)";
+        jsini::Value value(data);
+        assert(value.is_array());
+        assert(value.size() == 2);
+        assert(value[size_t(0)] == 1);
+        assert(value[1] == 2);
+    }
+
+    // Keywords
+    {
+        std::string data = "(False, True, NULL)";
+        jsini::Value value(data);
+        assert(value.is_array());
+        assert(value.size() == 3);
+        assert(value[size_t(0)].is_bool());
+        assert(value[size_t(0)] == false);
+        assert(value[1].is_bool());
+        assert(value[1] == true);
+        assert(value[2].is_null());
+    }
 }
 
 void test_types() {
