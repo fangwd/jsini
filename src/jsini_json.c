@@ -281,7 +281,7 @@ jsini_string_t *jsl_read_json_string(jsl_t *lex) {
 jsini_value_t *jsini_parse_string(const char *s, uint32_t len) {
     jsini_value_t *res;
     jsl_t lex;
-    jsl_init(&lex, s, len, 0);
+    jsl_init(&lex, s, len, JSINI_COMMENT);
     res = jsini_read_json(&lex);
     if (!res) jsini_write_error(&lex, stderr);
     jsl_skip_space(&lex, NULL);

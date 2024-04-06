@@ -677,6 +677,8 @@ extern "C" {
     void test_utf8();
 }
 
+void test_jsl();
+
 int main(int argc, char** argv) {
     std::string spec(argc > 1 ? argv[1] : "");
 
@@ -704,6 +706,7 @@ int main(int argc, char** argv) {
         test_vector();
         test_to_map();
         test_lineno();
+        test_jsl();
     }
 
     return 0;

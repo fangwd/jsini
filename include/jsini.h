@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#define JSINI_VERSION           "0.2.0"
+#define JSINI_VERSION           "0.2.1"
 
 // Data Types
 #define JSINI_TNULL             0

@@ -270,9 +270,7 @@ int jsl_skip_keyword(jsl_t *lex, const char *keyword, int (*is_break)(int)) {
 
 int jsl_skip_line(jsl_t *lex) {
     while (lex->input != lex->input_end) {
-        if (*lex->input == '\n' ||
-           (*lex->input == '\r' && lex->input[1] != '\n'))
-        {
+        if (*lex->input == '\n' || *lex->input == '\r') {
             lex->input++;
             lex->lineno++;
             break;
@@ -285,21 +283,45 @@ int jsl_skip_line(jsl_t *lex) {
 void jsl_skip_space(jsl_t *lex, const char *seps) {
     while (lex->input < lex->input_end) {
         char c = *lex->input;
-        if (c == ' ' || c == '\t') {
+        if (c == ' ' || c == '\t' || c == '\f' || c == '\v') {
             lex->input++;
         }
-        else if (c == '\r') {
-            lex->input++;
-            if (lex->input[1] != '\n') {
-                lex->lineno++;
-            }
-        }
-        else if (c == '\n') {
+        else if (c == '\n' || c == '\r') {
             lex->input++;
             lex->lineno++;
         }
         else if (seps && strchr(seps, c)) {
             lex->input++;
+        }
+        else if ((lex->options & JSINI_COMMENT)) {
+            if (c == '#') {
+                jsl_skip_line(lex);
+            } else if (c == '/') {
+                lex->input++;
+                c = *lex->input;
+                if (c == '/') {
+                    jsl_skip_line(lex);
+                }
+                else if (c == '*') {
+                    lex->input++;
+                    while (lex->input + 1 < lex->input_end) {
+                        if (lex->input[0] == '\n' || lex->input[0] == '\r') {
+                            lex->lineno++;
+                        }
+                        if (lex->input[0] == '*' && lex->input[1] == '/') {
+                            lex->input += 2;
+                            break;
+                        }
+                        lex->input++;
+                    }
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
         }
         else {
             break;

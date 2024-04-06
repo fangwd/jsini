@@ -29,6 +29,7 @@ add_executable(test
     tests/jsa.c
     tests/jsh.c
     tests/utf8.c
+    tests/jsl.cpp
     tests/main.cpp
 )
 target_link_libraries(test PRIVATE libjsini)
