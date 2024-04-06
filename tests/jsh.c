@@ -290,7 +290,7 @@ static void test__iterate() {
 
 static void test__create2();
 
-int main(int argc, char **argv) {
+void test_jsh() {
     jsh_t *tiny = jsh_create(4, test_hasher, NULL, 0);
     test__insert(tiny, test_cases_1, "test_cases_1");
     test__insert(tiny, test_cases_2, "test_cases_2");
@@ -315,10 +315,6 @@ int main(int argc, char **argv) {
     test__iterate();
 
     test__create2();
-
-    printf("All tests passed\n");
-
-    return 0;
 }
 
 /**

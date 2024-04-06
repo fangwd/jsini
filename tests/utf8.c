@@ -32,7 +32,7 @@ test_case cases[] = {
 
 int decode_utf8(const char *s, int32_t *ch);
 
-int main() {
+void test_utf8() {
     test_case *p = &cases[0];
     while (1) {
         int32_t ch, len;
@@ -47,5 +47,4 @@ int main() {
         if (!p->ch) break;
         p++;
     }
-    return 0;
 }

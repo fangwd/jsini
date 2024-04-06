@@ -119,6 +119,10 @@ public:
         return is(JSINI_TBOOL);
     }
 
+    inline bool is_integer() const {
+        return is(JSINI_TINTEGER);
+    }
+
     inline bool is_number() const {
         return is(JSINI_TINTEGER) || is(JSINI_TNUMBER);
     }
@@ -137,6 +141,10 @@ public:
 
     inline bool is_undefined() const {
         return is(JSINI_UNDEFINED);
+    }
+
+    inline uint32_t lineno() const {
+        return node_->value()->lineno;
     }
 
     size_t size() const {
@@ -485,24 +493,15 @@ public:
     class Iterator {
     private:
         Value *value_;
-#       if JSINI_KEEP_KEYS
         uint32_t data_;
-#       else
-        jsh_iterator_t *data_;
-#       endif
         friend class Value;
 
     public:
-        Iterator(Value *value=NULL) : value_(value), data_(0) {
+        Iterator(Value *value=NULL) : value_(value), data_{0} {
         }
 
         Iterator& operator++(int) {
-#           if JSINI_KEEP_KEYS
             data_++;
-#           else
-            jsh_t *map = ((jsini_object_t*) value_->node_->value())->map;
-            data_ = (jsh_iterator_t*) jsh_next(map, data_);
-#           endif
             return *this;
         }
 
@@ -510,21 +509,38 @@ public:
             return value_ != other.value_ || data_ != other.data_;
         }
 
-        const char *key() const {
-#           if JSINI_KEEP_KEYS
+        class Key {
+        private:
+            const jsini_string_t *data_;
+
+        public:
+            Key(const jsini_string_t *data) : data_(data) {
+            }
+
+            inline uint32_t lineno() const {
+                return data_->lineno;
+            }
+
+            inline bool operator==(const char *value) const {
+                return value ? strcmp(data_->data.data, value) == 0 : false;
+            }
+
+            inline bool operator==(const std::string &value) const {
+                return value == data_->data.data;
+            }
+
+            inline operator const char *() const {
+                return data_->data.data;
+            }
+        };
+
+        Key key() const {
             jsini_object_t *obj = (jsini_object_t*) value_->node_->value();
-            return ((jsini_attr_t*) jsa_get(&obj->data, data_))->name->data;
-#           else
-            return (const char *) data_->key;
-#           endif
+            return Key(((jsini_attr_t*) jsa_get(&obj->keys, data_))->name);
         }
 
         Value& value() const {
-#           if JSINI_KEEP_KEYS
-            return value_->operator[](key());
-#           else
-            return value_->operator[]((const char*) data_->key);
-#           endif
+            return value_->operator[]((const char *)key());
         }
     };
 
@@ -532,22 +548,13 @@ public:
 
     Iterator begin() {
         Value::Iterator it(this);
-#       if JSINI_KEEP_KEYS
         it.data_ = 0;
-#       else
-        jsh_t *map = ((jsini_object_t*) node_->value())->map;
-        it.data_ = (jsh_iterator_t*) jsh_first(map);
-#       endif
         return it;
     }
 
     Iterator end() {
         Value::Iterator it(this);
-#       if JSINI_KEEP_KEYS
-        it.data_ = ((jsini_object_t*) node_->value())->data.size;
-#       else
-        it.data_ = NULL;
-#       endif
+        it.data_ = ((jsini_object_t*) node_->value())->keys.size;
         return it;
     }
 

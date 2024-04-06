@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#define JSINI_VERSION           "0.2.0"
+
 // Data Types
 #define JSINI_TNULL             0
 #define JSINI_TBOOL             1
@@ -33,60 +35,61 @@ extern "C" {
 #define JSINI_ERROR_NAME       -5
 #define JSINI_ERROR_SEPARATOR  -6
 
+// Parser options
+#define JSINI_COMMENT           1
+
 // Options
-#define JSINI_PRETTY_PRINT		1
+#define JSINI_PRETTY_PRINT      1
 #define JSINI_SORT_KEYS         2
 #define JSINI_ESCAPE_UNICODE    4
-#define JSINI_PHP_EXPORT		8
-
-#ifndef JSINI_KEEP_KEYS
-#define JSINI_KEEP_KEYS			1
-#endif
+#define JSINI_PHP_EXPORT        8
 
 #include <stdint.h>
 #include <stdio.h>
 #include <limits.h>
 
+#define JSINI_VALUE_FIELDS      \
+    uint8_t         type;       \
+    uint8_t         lang;       \
+    uint32_t        lineno;
+
 typedef struct {
-    uint8_t         type;
-    uint8_t         lang;
+    JSINI_VALUE_FIELDS
 } jsini_value_t;
 
 typedef struct {
-    jsini_value_t   base;
+    JSINI_VALUE_FIELDS
     uint8_t         data;
 } jsini_bool_t;
 
 typedef struct {
-    jsini_value_t   base;
+    JSINI_VALUE_FIELDS
     int64_t         data;
 } jsini_integer_t;
 
 typedef struct {
-    jsini_value_t   base;
+    JSINI_VALUE_FIELDS
     double          data;
 } jsini_number_t;
 
 typedef struct {
-    jsini_value_t   base;
+    JSINI_VALUE_FIELDS
     jsb_t           data;
 } jsini_string_t;
 
 typedef struct {
-    jsini_value_t   base;
+    JSINI_VALUE_FIELDS
     jsa_t           data;
 } jsini_array_t;
 
 typedef struct {
-    jsb_t          *name;
+    jsini_string_t *name;
     jsini_value_t  *value;
 } jsini_attr_t;
 
 typedef struct {
-    jsini_value_t   base;
-#   if JSINI_KEEP_KEYS
-    jsa_t           data;
-#   endif
+    JSINI_VALUE_FIELDS
+    jsa_t          keys;
     jsh_t          *map;
 } jsini_object_t;
 
@@ -97,7 +100,7 @@ jsini_bool_t    *jsini_alloc_bool(int);
 jsini_integer_t *jsini_alloc_integer(int64_t);
 jsini_number_t  *jsini_alloc_number(double value);
 jsini_array_t   *jsini_alloc_array();
-jsini_attr_t    *jsini_alloc_attr(jsini_object_t *, jsb_t *);
+jsini_attr_t    *jsini_alloc_attr(jsini_object_t *, jsini_string_t *);
 jsini_object_t  *jsini_alloc_object();
 jsini_string_t  *jsini_alloc_string(const char *data, size_t length);
 
@@ -161,9 +164,9 @@ void jsini_write_string(jsb_t *sb, jsb_t *s, int options);
 double jsini_cast_double(const jsini_value_t *js);
 int jsini_cast_int(const jsini_value_t *js);
 
-#define	jsini_set_lang_bit(js,n)   (((jsini_value_t*)js)->lang |= 1 << n)
-#define	jsini_clear_lang_bit(js,n) (((jsini_value_t*)js)->lang &= ~(1 << n))
-#define	jsini_get_lang_bit(js,n)   (((jsini_value_t*)js)->lang & (1 << n))
+#define jsini_set_lang_bit(js,n)   (((jsini_value_t*)js)->lang |= 1 << n)
+#define jsini_clear_lang_bit(js,n) (((jsini_value_t*)js)->lang &= ~(1 << n))
+#define jsini_get_lang_bit(js,n)   (((jsini_value_t*)js)->lang & (1 << n))
 
 #define jsini_iter_key(it) ((const char*)(it)->key)
 #define jsini_iter_value(it) ((jsini_value_t*)((jsini_attr_t*) (it)->value)->value)
@@ -181,10 +184,11 @@ typedef struct {
     size_t      lineno;
     int         error;
     int         error_char;
+    int         options;
 } jsl_t;
 
 void            jsl_init(jsl_t*, const char *, size_t, int);
-jsb_t          *jsl_read_attr_name(jsl_t *);
+jsini_string_t *jsl_read_attr_name(jsl_t *);
 jsini_string_t *jsl_read_json_string(jsl_t *);
 jsini_value_t  *jsl_read_primitive(jsl_t *lex);
 void            jsl_skip_space(jsl_t *, const char *seps);

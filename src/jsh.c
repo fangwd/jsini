@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -432,8 +433,6 @@ void jsh_free_ex(jsh_t *t, void (*free_item)(void *, void *)) {
 	jsh_destroy(t);
 }
 
-#ifdef TEST_JSH
-#include <stdio.h>
 void jsh_dump(jsh_t *t, char *buf, int length) {
     uint32_t i, so;
     *buf = '\0';
@@ -445,4 +444,3 @@ void jsh_dump(jsh_t *t, char *buf, int length) {
         }
     }
 }
-#endif

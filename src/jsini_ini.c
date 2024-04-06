@@ -19,8 +19,9 @@ static void skip_ini_spaces(jsl_t *lex) {
 
 }
 
-static jsb_t *jsini_read_section_header(jsl_t *lex) {
-    jsb_t *sb = jsb_create();
+static jsini_string_t *jsini_read_section_header(jsl_t *lex) {
+    jsini_string_t *result = jsini_alloc_string(NULL, 0);
+    jsb_t *sb = &result->data;
 
     assert(*lex->input == '[');
 
@@ -39,15 +40,16 @@ static jsb_t *jsini_read_section_header(jsl_t *lex) {
     jsb_strip(sb);
 
     if (sb->size == 0 || lex->error) {
-        jsb_free(sb);
+        jsini_free_string(result);
         return NULL;
     }
 
-    return sb;
+    return result;
 }
 
 static jsini_string_t *jsini_read_ini_bare_string(jsl_t *lex) {
     jsini_string_t *s = jsini_alloc_string(NULL, 0);
+    s->lineno = lex->lineno;
 
     while (lex->input != lex->input_end) {
         char c = *lex->input++;
@@ -87,7 +89,7 @@ static jsini_value_t *read_ini_value(jsl_t *lex) {
 static int jsini_read_ini_attrs(jsl_t *lex, jsini_object_t *section) {
     while (1) {
         jsini_attr_t *attr;
-        jsb_t *name;
+        jsini_string_t *name;
 
         skip_ini_spaces(lex);
 
@@ -129,7 +131,7 @@ static int jsini_read_ini_attrs(jsl_t *lex, jsini_object_t *section) {
 static int jsini_read_section(jsl_t *lex, jsini_object_t *parent) {
     jsini_object_t *section;
     jsini_attr_t *attr;
-    jsb_t *name;
+    jsini_string_t *name;
 
     if ((name = jsini_read_section_header(lex)) == NULL) {
         return (lex->error = JSINI_ERROR_NAME);

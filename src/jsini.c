@@ -16,7 +16,7 @@
 
 jsini_array_t *jsini_alloc_array() {
     jsini_array_t *array = (jsini_array_t *) xmalloc(sizeof(jsini_array_t));
-    array->base.type = JSINI_TARRAY;
+    array->type = JSINI_TARRAY;
     jsa_init(&array->data);
     return array;
 }
@@ -30,19 +30,17 @@ void jsini_free_array(jsini_array_t *array) {
     xfree(array);
 }
 
-jsini_attr_t *jsini_alloc_attr(jsini_object_t *object, jsb_t *name) {
+jsini_attr_t *jsini_alloc_attr(jsini_object_t *object, jsini_string_t *name) {
     jsini_attr_t *attr = (jsini_attr_t *) xmalloc(sizeof(jsini_attr_t));
     attr->name = name;
     attr->value = NULL;
-#   if JSINI_KEEP_KEYS
-    jsa_push(&object->data, attr);
-#   endif
-    jsh_put(object->map, name->data, attr);
+    jsa_push(&object->keys, attr);
+    jsh_put(object->map, name->data.data, attr);
     return attr;
 }
 
 void jsini_free_attr(jsini_attr_t *attr) {
-    jsb_free(attr->name);
+    jsini_free_string(attr->name);
     if (attr->value) {
         jsini_free(attr->value);
     }
@@ -59,41 +57,39 @@ jsini_value_t *jsini_alloc_undefined() {
 jsini_value_t *jsini_alloc_null() {
     jsini_value_t *value = (jsini_value_t *) xmalloc(sizeof(jsini_value_t));
     value->type = JSINI_TNULL;
-	value->lang = 0;
+    value->lang = 0;
     return value;
 }
 
 jsini_bool_t *jsini_alloc_bool(int value) {
     jsini_bool_t *js = (jsini_bool_t *) xmalloc(sizeof(jsini_bool_t));
-    js->base.type = JSINI_TBOOL;
-	js->base.lang = 0;
+    js->type = JSINI_TBOOL;
+    js->lang = 0;
     js->data = value;
     return js;
 }
 
 jsini_integer_t *jsini_alloc_integer(int64_t value) {
     jsini_integer_t *js = (jsini_integer_t *) xmalloc(sizeof(jsini_integer_t));
-    js->base.type = JSINI_TINTEGER;
-	js->base.lang = 0;
+    js->type = JSINI_TINTEGER;
+    js->lang = 0;
     js->data = value;
     return js;
 }
 
 jsini_number_t *jsini_alloc_number(double value) {
     jsini_number_t *js = (jsini_number_t *) xmalloc(sizeof(jsini_number_t));
-    js->base.type = JSINI_TNUMBER;
-	js->base.lang = 0;
+    js->type = JSINI_TNUMBER;
+    js->lang = 0;
     js->data = value;
     return js;
 }
 
 jsini_object_t *jsini_alloc_object() {
     jsini_object_t *object = (jsini_object_t *) xmalloc(sizeof(jsini_object_t));
-    object->base.type = JSINI_TOBJECT;
-	object->base.lang = 0;
-#   if JSINI_KEEP_KEYS
-    jsa_init(&object->data);
-#   endif
+    object->type = JSINI_TOBJECT;
+    object->lang = 0;
+    jsa_init(&object->keys);
     object->map = jsh_create_simple(0,0);
     return object;
 }
@@ -105,19 +101,17 @@ void jsini_free_object(jsini_object_t *object) {
         jsini_free_attr((jsini_attr_t*)it->value);
     }
     jsh_destroy(object->map);
-#   if JSINI_KEEP_KEYS
-    jsa_clean(&object->data);
-#   endif
+    jsa_clean(&object->keys);
     xfree(object);
 }
 
 jsini_string_t *jsini_alloc_string(const char *data, size_t length) {
     jsini_string_t *js = (jsini_string_t *) xmalloc(sizeof(jsini_string_t));
-    js->base.type = JSINI_TSTRING;
-	js->base.lang = 0;
+    js->type = JSINI_TSTRING;
+    js->lang = 0;
     jsb_init(&js->data);
     if (data != NULL) {
-    	jsb_append(&js->data, data, length);
+      jsb_append(&js->data, data, length);
     }
     return js;
 }
@@ -147,8 +141,9 @@ void jsini_free(jsini_value_t *js) {
 void jsl_init(jsl_t *lex, const char *s, size_t len, int options) {
     lex->input     = s;
     lex->input_end = s + len;
-    lex->lineno    = 0;
+    lex->lineno    = 1;
     lex->error     = JSINI_OK;
+    lex->options   = options;
 }
 
 int jsl_is_break(int c) {
@@ -196,23 +191,27 @@ jsini_value_t *jsl_read_primitive(jsl_t *lex) {
     case '-':
     case '.':
         value = (jsini_value_t*) jsl_read_number(lex);
+        value->lineno = lex->lineno;
         break;
     case 'T':
     case 't':
         if (jsl_skip_keyword(lex, "true", NULL)) {
             value = (jsini_value_t*) jsini_alloc_bool(1);
+            value->lineno = lex->lineno;
         }
         break;
     case 'F':
     case 'f':
         if (jsl_skip_keyword(lex, "false", NULL)) {
             value = (jsini_value_t*) jsini_alloc_bool(0);
+            value->lineno = lex->lineno;
         }
         break;
     case 'N':
     case 'n':
         if (jsl_skip_keyword(lex, "null", NULL)) {
             value = jsini_alloc_null();
+            value->lineno = lex->lineno;
         }
         break;
     default:
@@ -310,51 +309,51 @@ void jsl_skip_space(jsl_t *lex, const char *seps) {
 
 const char *jsini_get_string(jsini_object_t *object, const char *name) {
     jsini_attr_t *attr = (jsini_attr_t *) jsh_get(object->map, name);
-	if (attr) {
-		jsini_string_t *js = (jsini_string_t *) attr->value;
-		if (jsini_type(js) == JSINI_TNULL) {
-			return NULL;
-		}
-		assert(jsini_type(js) == JSINI_TSTRING);
-		return js->data.data;
-	}
-	return NULL;
+  if (attr) {
+    jsini_string_t *js = (jsini_string_t *) attr->value;
+    if (jsini_type(js) == JSINI_TNULL) {
+      return NULL;
+    }
+    assert(jsini_type(js) == JSINI_TSTRING);
+    return js->data.data;
+  }
+  return NULL;
 }
 
 int jsini_get_integer(jsini_object_t *object, const char *name) {
     jsini_attr_t *attr = (jsini_attr_t *) jsh_get(object->map, name);
-	if (attr) {
-		jsini_integer_t *js = (jsini_integer_t *) attr->value;
-        if (jsini_type(js) == JSINI_TNULL) {
-            return 0;
-        }
-		assert(jsini_type(js) == JSINI_TINTEGER);
-		return js->data;
-	}
-	return INT_MIN;
+    if (attr) {
+        jsini_integer_t *js = (jsini_integer_t *) attr->value;
+            if (jsini_type(js) == JSINI_TNULL) {
+                return 0;
+            }
+        assert(jsini_type(js) == JSINI_TINTEGER);
+        return js->data;
+    }
+    return INT_MIN;
 }
 
 jsini_value_t *jsini_get_value(jsini_object_t *object, const char *name) {
     jsini_attr_t *attr = (jsini_attr_t *) jsh_get(object->map, name);
-	return attr ? attr->value : NULL;
+    return attr ? attr->value : NULL;
 }
 
 jsini_object_t *jsini_get_object(jsini_object_t *object, const char *name) {
     jsini_attr_t *attr = (jsini_attr_t *) jsh_get(object->map, name);
-	if (attr) {
-		assert(attr->value->type == JSINI_TOBJECT);
-		return (jsini_object_t *) attr->value;
-	}
-	return NULL;
+    if (attr) {
+        assert(attr->value->type == JSINI_TOBJECT);
+        return (jsini_object_t *) attr->value;
+    }
+    return NULL;
 }
 
 jsini_array_t *jsini_get_array(jsini_object_t *object, const char *name) {
     jsini_attr_t *attr = (jsini_attr_t *) jsh_get(object->map, name);
-	if (attr) {
-		assert(attr->value->type == JSINI_TARRAY);
-		return (jsini_array_t *) attr->value;
-	}
-	return NULL;
+    if (attr) {
+        assert(attr->value->type == JSINI_TARRAY);
+        return (jsini_array_t *) attr->value;
+    }
+    return NULL;
 }
 
 jsini_value_t *jsini_select(const jsini_object_t *object, const char *name) {
@@ -389,20 +388,20 @@ jsini_value_t *jsini_select(const jsini_object_t *object, const char *name) {
 
 int jsini_select_integer(const jsini_object_t *object, const char *name) {
     jsini_integer_t *js = (jsini_integer_t*)jsini_select(object, name);
-	if (js != NULL) {
-		assert(jsini_type(js) == JSINI_TINTEGER);
-		return js->data;
-	}
-	return INT_MIN; 
+    if (js != NULL) {
+        assert(jsini_type(js) == JSINI_TINTEGER);
+        return js->data;
+    }
+    return INT_MIN; 
 }
 
 const char* jsini_select_string(const jsini_object_t *object, const char *name) {
     jsini_string_t *js = (jsini_string_t*)jsini_select(object, name);
-	if (js != NULL) {
-		assert(jsini_type(js) == JSINI_TSTRING);
-		return js->data.data;
-	}
-	return NULL;
+    if (js != NULL) {
+        assert(jsini_type(js) == JSINI_TSTRING);
+        return js->data.data;
+    }
+    return NULL;
 }
 
 // API
@@ -434,8 +433,7 @@ jsini_attr_t *jsini_attr(jsini_object_t *object, const char *name) {
         attr->value = NULL;
     }
     else {
-        jsb_t *attr_name = jsb_create();
-        jsb_append(attr_name, name, strlen(name));
+        jsini_string_t *attr_name = jsini_alloc_string(name, strlen(name));
         return jsini_alloc_attr(object, attr_name);
     }
     return attr;
@@ -525,9 +523,7 @@ void jsini_remove(jsini_object_t *object, const char *key) {
     jsini_attr_t *attr = (jsini_attr_t *) jsh_get(object->map, key);
     if (attr) {
         jsh_remove(object->map, key);
-#       if JSINI_KEEP_KEYS
-        jsa_remove_first(&object->data, (JSA_TYPE) attr);
-#       endif
+        jsa_remove_first(&object->keys, (JSA_TYPE) attr);
         jsini_free_attr(attr);
     }
 }
@@ -576,4 +572,3 @@ const char *jsini_type_name(uint8_t type) {
         return NULL;
     }
 }
-

@@ -192,7 +192,6 @@ void test_iterating() {
     jsini::Value::Iterator it = value.begin();
     size_t n = 0;
     while (it != value.end()) {
-#if JSINI_KEEP_KEYS
         if (n == 0) {
             assert(it.key() == std::string("a"));
             assert(it.value() == 1);
@@ -200,7 +199,6 @@ void test_iterating() {
             assert(it.key() == std::string("b"));
             assert(it.value() == 2);
         }
-#endif
         it++;
         n++;
     }
@@ -232,21 +230,18 @@ void test_dumping() {
         value["break"] = false;
         value.remove("continue");
 
-#if JSINI_KEEP_KEYS
+        assert(value.size() == 4);
         assert(to_string(value) == "{\"a\":1,\"b\":2,\"c\":{\"d\":3,\"e\":4},\"break\":false}");
-#endif
 
         assert(to_string(value, JSINI_SORT_KEYS) == "{\"a\":1,\"b\":2,\"break\":false,\"c\":{\"d\":3,\"e\":4}}");
 
         assert(to_string(value, JSINI_PRETTY_PRINT | JSINI_SORT_KEYS, 1) ==
                "{\n \"a\": 1,\n \"b\": 2,\n \"break\": false,\n \"c\": {\n  \"d\": 3,\n  \"e\": 4\n }\n}");
 
-#if JSINI_KEEP_KEYS
         value.remove("b");
         assert(to_string(value) == "{\"a\":1,\"c\":{\"d\":3,\"e\":4},\"break\":false}");
         value.remove("c");
         assert(to_string(value) == "{\"a\":1,\"break\":false}");
-#endif
 
         {
             jsini::Value value(std::string("[1,[2,3,[4],[]]]"));
@@ -653,17 +648,63 @@ static void test_to_map() {
     }
 }
 
-int main() {
-    test_parsing();
-    test_types();
-    test_building();
-    test_removing();
-    test_iterating();
-    test_dumping();
-    test_type_cast();
-    test_to();
-    test_vector();
-    test_to_map();
+static void test_lineno() {
+    std::string text = R"json({
+        address: {
+            country: "Australia",
+            city:
+                "Adelaide"
+        },
+        tags: [
+            abc,
+            def
+        ]
+    })json";
+    jsini::Value value(text);
+    assert(value.lineno() == 1);
+    assert(value["address"].lineno() == 2);
+    assert(value["tags"][1].lineno() == 9);
+
+    auto it = value["address"].begin();
+    it++;
+    assert(it.key().lineno() == 4);
+    assert(it.value().lineno() == 5);
+}
+
+extern "C" {
+    void test_jsa();
+    void test_jsh();
+    void test_utf8();
+}
+
+int main(int argc, char** argv) {
+    std::string spec(argc > 1 ? argv[1] : "");
+
+    if (spec == "all" || spec == "jsa") {
+        test_jsa();
+    }
+
+    if (spec == "all" || spec == "jsh") {
+        test_jsh();
+    }
+
+    if (spec == "all" || spec == "utf8") {
+        test_jsh();
+    }
+
+    if (spec == "all" || spec == "") {
+        test_parsing();
+        test_types();
+        test_building();
+        test_removing();
+        test_iterating();
+        test_dumping();
+        test_type_cast();
+        test_to();
+        test_vector();
+        test_to_map();
+        test_lineno();
+    }
 
     return 0;
 }

@@ -19,6 +19,7 @@ int jsl_decode_json_string(jsl_t *lex, jsb_t *s);;
 
 static jsini_array_t *jsini_read_json_array(jsl_t *lex) {
     jsini_array_t *array = jsini_alloc_array();
+    array->lineno = lex->lineno;
 
     char array_open = *lex->input;
     char array_end;
@@ -66,15 +67,18 @@ fail:
     return NULL;
 }
 
-jsb_t *jsl_read_attr_name(jsl_t *lex) {
-    jsb_t *sb = jsb_create();
+jsini_string_t *jsl_read_attr_name(jsl_t *lex) {
+    jsini_string_t *result = jsini_alloc_string(NULL, 0);
+    result->lineno = lex->lineno;
+
+    jsb_t *sb = &result->data;
 
     if (*lex->input == '\'' || *lex->input == '"') {
         if (jsl_decode_json_string(lex, sb) != JSINI_OK) {
-            jsb_free(sb);
+            jsini_free_string(result);
             return NULL;
         }
-        return sb;
+        return result;
     }
 
     while (lex->input != lex->input_end) {
@@ -85,15 +89,16 @@ jsb_t *jsl_read_attr_name(jsl_t *lex) {
     }
 
     if (sb->size == 0) {
-        jsb_free(sb);
+        jsini_free_string(result);
         return NULL;
     }
 
-    return sb;
+    return result;
 }
 
 static jsini_string_t *jsini_read_json_bare_string(jsl_t *lex) {
     jsini_string_t *s = jsini_alloc_string(NULL, 0);
+    s->lineno = lex->lineno;
 
     while (lex->input != lex->input_end) {
         char c = *lex->input++;
@@ -112,6 +117,7 @@ static jsini_string_t *jsini_read_json_bare_string(jsl_t *lex) {
 
 static jsini_object_t *jsini_read_json_object(jsl_t *lex) {
     jsini_object_t *object = jsini_alloc_object();
+    object->lineno = lex->lineno;
 
     assert(*lex->input == '{');
 
@@ -119,7 +125,7 @@ static jsini_object_t *jsini_read_json_object(jsl_t *lex) {
 
     while (lex->input < lex->input_end) {
         jsini_attr_t *attr;
-        jsb_t *name;
+        jsini_string_t *name;
 
         jsl_skip_space(lex, ",");
 
@@ -264,6 +270,7 @@ int jsl_decode_json_string(jsl_t *lex, jsb_t *s) {
 
 jsini_string_t *jsl_read_json_string(jsl_t *lex) {
     jsini_string_t *s = jsini_alloc_string(NULL, 0);
+    s->lineno = lex->lineno;
     if (jsl_decode_json_string(lex, &s->data) != JSINI_OK) {
         jsini_free_string(s);
         return NULL;
@@ -359,16 +366,16 @@ void jsini_stringify_real(const jsini_value_t *, jsb_t *, int, int, int);
 static void strattr(jsb_t *sb, const jsini_attr_t *attr, int options,
         int level, int indent) {
 	if ((options & JSINI_PRETTY_PRINT)!= 0) SHIFT(sb, level, indent);
-    jsini_write_string(sb, attr->name, options);
+    jsini_write_string(sb, &attr->name->data, options);
 	jsb_append_char(sb, ':');
     if ((options & JSINI_PRETTY_PRINT)!= 0) jsb_append_char(sb, ' ');
     jsini_stringify_real(attr->value, sb, options, level, indent);
 }
 
 static int attrcmp(const void *a, const void *b) {
-    const char *s1 = (*((jsini_attr_t **) a))->name->data;
-    const char *s2 = (*((jsini_attr_t **) b))->name->data;
-    return strcmp(s1, s2);
+    jsini_attr_t *a1 = *((jsini_attr_t **) a);
+    jsini_attr_t *a2 = *((jsini_attr_t **) b);
+    return strcmp(a1->name->data.data, a2->name->data.data);
 }
 
 void jsini_stringify_real(const jsini_value_t *value, jsb_t *sb, int options,
@@ -443,8 +450,7 @@ void jsini_stringify_real(const jsini_value_t *value, jsb_t *sb, int options,
             }
             else {
                 uint32_t n = 0;
-#               if JSINI_KEEP_KEYS
-                jsa_t *array = &((jsini_object_t *) value)->data;
+                jsa_t *array = &((jsini_object_t *) value)->keys;
                 uint32_t i;
                 for (i = 0; i < array->size; i++) {
                     jsini_attr_t *attr = (jsini_attr_t*)array->item[i];
@@ -458,22 +464,6 @@ void jsini_stringify_real(const jsini_value_t *value, jsb_t *sb, int options,
                     }
                     strattr(sb, attr, options, level + 1, indent);
                 }
-#               else
-                while (it) {
-                    jsini_attr_t *attr = (jsini_attr_t *) it->value;
-                    if (attr->value->type == JSINI_UNDEFINED) {
-                        it = jsh_next(map, it);
-                        continue;
-                    }
-                    if (n++ > 0) {
-                        jsb_append_char(sb, ',');
-                        if ((options & JSINI_PRETTY_PRINT) != 0)
-                            jsb_append_char(sb, '\n');
-                    }
-                    strattr(sb, attr, options, level + 1, indent);
-                    it = jsh_next(map, it);
-                }
-#               endif
                 if (n > 0 && (options & JSINI_PRETTY_PRINT) != 0) {
                     jsb_append_char(sb, '\n');
                     SHIFT(sb, level, indent);
