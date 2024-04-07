@@ -190,8 +190,9 @@ jsini_value_t *jsl_read_primitive(jsl_t *lex) {
     case '9':
     case '-':
     case '.':
-        value = (jsini_value_t*) jsl_read_number(lex);
-        value->lineno = lex->lineno;
+        if ((value = (jsini_value_t*) jsl_read_number(lex))) {
+            value->lineno = lex->lineno;
+        }
         break;
     case 'T':
     case 't':
