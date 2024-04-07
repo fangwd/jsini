@@ -14,7 +14,7 @@
 #define xmalloc malloc
 #define xfree free
 
-static jsini_value_t *jsini_read_json(jsl_t *js);
+jsini_value_t *jsini_read_json(jsl_t *js);
 int jsl_decode_json_string(jsl_t *lex, jsb_t *s);;
 
 static jsini_array_t *jsini_read_json_array(jsl_t *lex) {
@@ -73,7 +73,7 @@ jsini_string_t *jsl_read_attr_name(jsl_t *lex) {
 
     jsb_t *sb = &result->data;
 
-    if (*lex->input == '\'' || *lex->input == '"') {
+    if (*lex->input == '\'' || *lex->input == '"' || *lex->input == '`') {
         if (jsl_decode_json_string(lex, sb) != JSINI_OK) {
             jsini_free_string(result);
             return NULL;
@@ -96,12 +96,55 @@ jsini_string_t *jsl_read_attr_name(jsl_t *lex) {
     return result;
 }
 
+static int jsl_read_env(jsl_t *lex, jsb_t *s) {
+    char name[256];
+    size_t len = 0;
+    const char *brace_open = lex->input++; // {
+
+    while (lex->input < lex->input_end && *lex->input != '`') {
+        if (*lex->input != '}') {
+            if (len < sizeof (name) - 1) {
+                name[len++] = *lex->input;
+            }
+            lex->input++;
+        }
+        else if (*lex->input != '`') {
+            lex->input++;
+            break;
+        }
+    }
+
+    if (len > 0) {
+        if (*(lex->input - 1) != '}') {
+            jsb_append_char(s, '$');
+            jsb_append(s, brace_open, lex->input - brace_open);
+        } else {
+            name[len] = '\0';
+            const char *value = getenv(name);
+            if (value) {
+                jsb_append(s, value, strlen(value));
+            } else {
+                jsb_append_char(s, '$');
+                jsb_append(s, brace_open, lex->input - brace_open);
+            }
+        }
+    } else {
+        jsb_append(s, "${}", 3);
+    }
+
+    return JSINI_OK;
+}
+
 static jsini_string_t *jsini_read_json_bare_string(jsl_t *lex) {
     jsini_string_t *s = jsini_alloc_string(NULL, 0);
     s->lineno = lex->lineno;
 
     while (lex->input != lex->input_end) {
         char c = *lex->input++;
+        if (c == '$' && lex->input < lex->input_end && *lex->input == '{') {
+            jsl_read_env(lex, &s->data);
+            return s;
+        }
         if (c == ',' || isspace(c)) {
             break;
         }
@@ -172,7 +215,7 @@ fail:
     return NULL;
 }
 
-static jsini_value_t *jsini_read_json(jsl_t *lex) {
+jsini_value_t *jsini_read_json(jsl_t *lex) {
     jsini_value_t *value = NULL;
 
     jsl_skip_space(lex, NULL);
@@ -187,6 +230,7 @@ static jsini_value_t *jsini_read_json(jsl_t *lex) {
         return (jsini_value_t*)jsini_read_json_array(lex);
     case '"':
     case '\'':
+    case '`':
         return (jsini_value_t*)jsl_read_json_string(lex);
     default:
         if ((value = jsl_read_primitive(lex)) == NULL) {
@@ -216,7 +260,6 @@ static int jsini_read_json_utf8(jsl_t *lex, int offset, jsb_t *s) {
 
 int jsl_decode_json_string(jsl_t *lex, jsb_t *s) {
     char quote = *lex->input++;
-
     while (lex->input != lex->input_end) {
         char c = *lex->input++;
         if (c == quote) {
@@ -259,6 +302,14 @@ int jsl_decode_json_string(jsl_t *lex, jsb_t *s) {
             default: {
                     return (lex->error = JSINI_ERROR_ESCAPE);
                 }
+            }
+        }
+        else if (c == '$') {
+            if (quote == '`' && lex->input < lex->input_end && *lex->input == '{') {
+                jsl_read_env(lex, s);
+            }
+            else {
+                jsb_append_char(s, '$');
             }
         } else {
             jsb_append_char(s, c);

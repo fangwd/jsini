@@ -14,14 +14,14 @@ A C/C++ library that parses json-like (including json) data. It comes with a C++
   }
   ```
 
-- The order of object keys can be kept after parsing. For example, the example above produces the following result:
+- The order of object keys are kept after parsing. For example, the example above produces the following result:
   ```
   {
     "database": {
         "host": "localhost",
         "port": 3306,
         "user": "root",
-        "password": "secret"
+        "password": ${MY_SECRET}
     },
     "thread_count": 5
   }

@@ -75,6 +75,7 @@ static jsini_value_t *read_ini_value(jsl_t *lex) {
     switch (*lex->input) {
     case '"':
     case '\'':
+    case '`':
         value = (jsini_value_t*)jsl_read_json_string(lex);
         break;
     default:
