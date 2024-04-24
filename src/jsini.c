@@ -246,7 +246,12 @@ void jsini_write_error(jsl_t *lex, FILE *stream) {
         break;
     }
 
-    fprintf(stream, " (line %zu)\n", lex->lineno + 1);
+    int len = 0;
+    while (lex->input + len < lex->input_end && lex->input[len] != '\n') {
+        len++;
+    }
+
+    fprintf(stream, " (line %zu): %.*s\n", lex->lineno, len, lex->input);
 }
 
 int jsl_skip_keyword(jsl_t *lex, const char *keyword, int (*is_break)(int)) {
