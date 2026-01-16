@@ -136,15 +136,15 @@ Please report any bugs to https://github.com/fangwd/jsini/issues
 
 ## A note on the C++ wrapper
 
-The C++ jsini::Value class uses a proxy pattern that relies on a Root object to manage the lifetime of all
-sub-values. It favours safety and a "natural" syntax (preserving references) over raw speed. However, this
-comes with a cost:
+The C++ `jsini::Value` class uses a proxy pattern that relies on a Root object to manage the lifetime of all
+sub-values. It favours safety and a "natural" syntax (preserving references) over raw speed - but that comes
+with a cost.
 
-Every time you access a value using operator[] (e.g., value[i]), the following happens inside Root::allocate:
+Every time you access a value using `operator[]` (e.g., `value[i]`), the following happens inside `Root::allocate`:
   1. Hash Map Lookup: It checks a hash map (node_map_) to see if a proxy for this specific element already exists.
   2. Double Allocation: If it's a new access, it performs two heap allocations:
-      * new Node(...)
-      * new Value(...)
+      * `new Node(...)`
+      * `new Value(...)`
   3. Hash Map Insertion: It inserts these new objects into the map.
 
 ```cpp
@@ -159,8 +159,8 @@ Value *allocate(jsini_value_t *container, uintptr_t index) {
     return value;
 }
 ```
-In contrast, the C implementation jsini_aget simply performs a bounds check and returns a pointer from the array,
+In contrast, the C implementation `jsini_aget` simply performs a bounds check and returns a pointer from the array,
 which incurs zero overhead.
 
-For performance-critical loops, using the raw jsini_value_t* (accessible via value.raw()) or the C API directly
+For performance-critical loops, using the raw `jsini_value_t*` (accessible via `value.raw()`) or the C API directly
 are recommended.
