@@ -671,6 +671,68 @@ static void test_lineno() {
     assert(it.value().lineno() == 5);
 }
 
+static void test_jsonl() {
+    std::string data = "{\"a\": 1}\n{\"b\": 2}\n{\"c\": 3}";
+    jsini::Value value(jsini::Value::from_jsonl(data));
+
+    assert(value.is_array());
+    assert(value.size() == 3);
+    assert(value[size_t(0)]["a"] == 1);
+    assert(value[1]["b"] == 2);
+    assert(value[2]["c"] == 3);
+
+    // Test with mixed spacing and comments (if supported by lexer)
+    std::string data2 = "{\"a\": 1}\n\n  {\"b\": 2}  \n// comment\n{\"c\": 3}";
+    jsini::Value value2(jsini::Value::from_jsonl(data2));
+    assert(value2.is_array());
+    assert(value2.size() == 3);
+    assert(value2[1]["b"] == 2);
+
+    // Test from file
+    {
+        FILE* fp = fopen("test.jsonl", "w");
+        fprintf(fp, "{\"x\": 10}\n{\"y\": 20}\n");
+        fclose(fp);
+
+        jsini::Value value3(jsini::Value::from_jsonl_file("test.jsonl"));
+        assert(value3.is_array());
+        assert(value3.size() == 2);
+        assert(value3[size_t(0)]["x"] == 10);
+        assert(value3[1]["y"] == 20);
+
+        remove("test.jsonl");
+    }
+
+    // Test callback API
+    {
+        FILE* fp = fopen("test.jsonl", "w");
+        fprintf(fp, "{\"id\": 1}\n{\"id\": 2}\n{\"id\": 3}\n");
+        fclose(fp);
+
+        int count = 0;
+        int sum = 0;
+        jsini::Value::parse_jsonl_file("test.jsonl", [&](jsini::Value& v) {
+            count++;
+            sum += (int)v["id"];
+            return JSINI_OK;
+        });
+
+        assert(count == 3);
+        assert(sum == 6);
+
+        // Test early exit
+        count = 0;
+        jsini::Value::parse_jsonl_file("test.jsonl", [&](jsini::Value& v) {
+            count++;
+            if ((int)v["id"] == 2) return 1; // Stop
+            return JSINI_OK;
+        });
+        assert(count == 2);
+
+        remove("test.jsonl");
+    }
+}
+
 extern "C" {
     void test_jsa();
     void test_jsh();
@@ -706,8 +768,11 @@ int main(int argc, char** argv) {
         test_vector();
         test_to_map();
         test_lineno();
+        test_jsonl();
         test_jsl();
     }
+
+    std::cout << "All tests passed!" << std::endl;
 
     return 0;
 }

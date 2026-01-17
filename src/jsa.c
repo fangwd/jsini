@@ -13,7 +13,7 @@
 #define xrealloc        realloc
 #define xfree           free
 
-#define JSA_MAX_SIZE    1048576
+#define JSA_MAX_SIZE    1073741824
 #define JSA_OK          0
 #define JSA_ERROR      -1
 
@@ -33,8 +33,13 @@ int jsa_alloc(jsa_t * a, uint32_t size) {
     if (a->alloc_size < size) {
         void *item;
 
-        if ((size = ((size + 31) / 32) * 32) > JSA_MAX_SIZE) {
-            return JSA_ERROR;
+        size = ((size + 31) / 32) * 32;
+        if (size > JSA_MAX_SIZE) {
+            size = JSA_MAX_SIZE;
+        }
+
+        if (a->alloc_size >= size) {
+            return JSA_OK;
         }
 
         item = xrealloc(a->item, size * sizeof(JSA_TYPE));

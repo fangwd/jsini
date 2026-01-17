@@ -99,6 +99,30 @@ public:
         init(jsini_parse_string(s, length));
     }
 
+    static jsini_value_t* from_jsonl(const std::string &s) {
+        return jsini_parse_string_jsonl(s.c_str(), s.length());
+    }
+
+    static jsini_value_t* from_jsonl_file(const std::string &filename) {
+        return jsini_parse_file_jsonl(filename.c_str());
+    }
+
+    static int parse_jsonl_file(const std::string &filename, std::function<int(Value&)> cb) {
+        struct Context {
+            std::function<int(Value&)> cb;
+            Root *root;
+        } ctx = { cb, nullptr };
+
+        jsini_jsonl_cb c_cb = [](jsini_value_t *v, void *data) -> int {
+            Context *c = (Context*)data;
+            Value val(v);
+            int res = c->cb(val);
+            return res;
+        };
+
+        return jsini_parse_file_jsonl_ex(filename.c_str(), c_cb, &ctx);
+    }
+
     ~Value() {
         if (node_->is_root()) {
             jsini_free(node_->value());

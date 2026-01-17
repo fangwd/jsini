@@ -13,6 +13,7 @@
 int main(int argc, char **argv) {
     int print_options = 0;
     int parse_ini = 0;
+    int parse_jsonl = 0;
     int replace = 0;
     const char *key = NULL;
 
@@ -21,6 +22,7 @@ int main(int argc, char **argv) {
            {"ascii",       no_argument,        0, 'a'},
            {"from",        required_argument,  0, 'f'},
            {"ini",         no_argument,        0, 'i'},
+           {"jsonl",       no_argument,        0, 'L'},
            {"key",         required_argument,  0, 'k'},
            {"to",          required_argument,  0, 't'},
            {"output",      required_argument,  0, 'o'},
@@ -30,7 +32,7 @@ int main(int argc, char **argv) {
            {0, 0, 0, 0}
        };
 
-       static const char *opts = "af:g:k:it:o:prS";
+       static const char *opts = "af:g:k:iLt:o:prS";
 
        int n = 0;
        int c = getopt_long (argc, argv, opts, options, &n);
@@ -45,6 +47,9 @@ int main(int argc, char **argv) {
            break;
        case 'i':
            parse_ini = 1;
+           break;
+       case 'L':
+           parse_jsonl = 1;
            break;
        case 'k':
            key = optarg;
@@ -70,7 +75,7 @@ int main(int argc, char **argv) {
     if (optind < argc) {
         const char *file = argv[optind++];
         jsini_value_t *value = parse_ini ? jsini_parse_file_ini(file) :
-                jsini_parse_file(file);
+                (parse_jsonl ? jsini_parse_file_jsonl(file) : jsini_parse_file(file));
         if (value != NULL) {
             if (key) {
                 jsini_print(stdout, jsini_select((jsini_object_t*)value, key), 0);
@@ -99,7 +104,7 @@ int main(int argc, char **argv) {
       while((n = fread(buf, 1, sizeof(buf), stdin)) > 0) {
         jsb_append(sb, buf, n);
       }
-      jsini_value_t *value = jsini_parse_string(sb->data, sb->size);
+      jsini_value_t *value = parse_jsonl ? jsini_parse_string_jsonl(sb->data, sb->size) : jsini_parse_string(sb->data, sb->size);
       jsini_print(stdout, value, print_options);
       jsini_free(value);
       jsb_free(sb);

@@ -150,6 +150,18 @@ int jsb_load(jsb_t *sb, const char* filename) {
     return JSB_ERROR;
 }
 
+int jsb_getline(jsb_t *sb, FILE *fp) {
+    char buf[1024];
+    jsb_clear(sb);
+    while (fgets(buf, sizeof(buf), fp)) {
+        jsb_append(sb, buf, 0);
+        if (sb->size > 0 && sb->data[sb->size - 1] == '\n') {
+            return JSB_OK;
+        }
+    }
+    return sb->size > 0 ? JSB_OK : JSB_ERROR;
+}
+
 void jsb_lstrip(jsb_t *sb) {
     size_t n = 0;
     while (n < sb->size) {

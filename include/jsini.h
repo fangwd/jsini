@@ -151,10 +151,16 @@ int jsini_select_integer(const jsini_object_t *object, const char *path);
 const char* jsini_select_string(const jsini_object_t *object, const char *path);
 
 jsini_value_t *jsini_parse_string(const char *s, uint32_t len);
+jsini_value_t *jsini_parse_string_ini(const char *s, uint32_t len);
+jsini_value_t *jsini_parse_string_jsonl(const char *s, uint32_t len);
 jsini_value_t *jsini_parse_file(const char *);
 #define jsini_parse_object_file(s) ((jsini_object_t*)jsini_parse_file(s))
-jsini_value_t *jsini_parse_file(const char *);
 jsini_value_t *jsini_parse_file_ini(const char *);
+jsini_value_t *jsini_parse_file_jsonl(const char *);
+
+typedef int (*jsini_jsonl_cb)(jsini_value_t *value, void *user_data);
+int jsini_parse_file_jsonl_ex(const char *file, jsini_jsonl_cb cb, void *user_data);
+
 void           jsini_print(FILE *, const jsini_value_t *, int options);
 int            jsini_print_file(const char *, const jsini_value_t *, int);
 jsini_value_t *jsini_select(const jsini_object_t *, const char *);

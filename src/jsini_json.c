@@ -343,6 +343,26 @@ jsini_value_t *jsini_parse_string(const char *s, uint32_t len) {
     return res;
 }
 
+jsini_value_t *jsini_parse_string_jsonl(const char *s, uint32_t len) {
+    jsini_array_t *array = jsini_alloc_array();
+    jsl_t lex;
+    jsl_init(&lex, s, len, JSINI_COMMENT);
+
+    while (lex.input < lex.input_end) {
+        jsl_skip_space(&lex, NULL);
+        if (lex.input >= lex.input_end) break;
+
+        jsini_value_t *val = jsini_read_json(&lex);
+        if (!val) {
+            jsini_write_error(&lex, stderr);
+            jsini_free_array(array);
+            return NULL;
+        }
+        jsini_push_value(array, val);
+    }
+    return (jsini_value_t *)array;
+}
+
 jsini_value_t *jsini_parse_file(const char *file) {
     jsini_value_t *result = NULL;
     jsb_t *sb = jsb_create();
@@ -351,6 +371,59 @@ jsini_value_t *jsini_parse_file(const char *file) {
     }
     jsb_free(sb);
     return result;
+}
+
+jsini_value_t *jsini_parse_file_jsonl(const char *file);
+
+static int jsonl_collect_cb(jsini_value_t *val, void *user_data) {
+    jsini_array_t *array = (jsini_array_t *)user_data;
+    jsini_push_value(array, val);
+    return JSINI_OK;
+}
+
+jsini_value_t *jsini_parse_file_jsonl(const char *file) {
+    jsini_array_t *array = jsini_alloc_array();
+    if (jsini_parse_file_jsonl_ex(file, jsonl_collect_cb, array) != JSINI_OK) {
+        jsini_free_array(array);
+        return NULL;
+    }
+    return (jsini_value_t *)array;
+}
+
+int jsini_parse_file_jsonl_ex(const char *file, jsini_jsonl_cb cb, void *user_data) {
+    FILE *fp = fopen(file, "r");
+    if (!fp) return JSINI_ERROR;
+
+    jsb_t sb;
+    jsb_init(&sb);
+
+    int res = JSINI_OK;
+
+    while (jsb_getline(&sb, fp) == JSB_OK) {
+        jsl_t lex;
+        jsl_init(&lex, sb.data, sb.size, JSINI_COMMENT);
+
+        while (lex.input < lex.input_end) {
+            jsl_skip_space(&lex, NULL);
+            if (lex.input >= lex.input_end) break;
+
+            jsini_value_t *val = jsini_read_json(&lex);
+            if (!val) {
+                jsini_write_error(&lex, stderr);
+                res = JSINI_ERROR;
+                goto done;
+            }
+            
+            if ((res = cb(val, user_data)) != JSINI_OK) {
+                goto done;
+            }
+        }
+    }
+
+done:
+    jsb_clean(&sb);
+    fclose(fp);
+    return res;
 }
 
 void jsini_write_string(jsb_t *sb, jsb_t *s, int options) {

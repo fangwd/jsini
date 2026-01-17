@@ -9,6 +9,7 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
 #include <stddef.h>
 #include <stdarg.h>
 
@@ -32,6 +33,7 @@ int    jsb_append_char(jsb_t *, const char);
 jsb_t *jsb_clear(jsb_t *);
 void   jsb_init(jsb_t *);
 int    jsb_load(jsb_t *, const char*);
+int    jsb_getline(jsb_t *, FILE *);
 int    jsb_printf(jsb_t *, const char *, ...);
 int    jsb_sql_quote(jsb_t *sb, const char *s, size_t len);
 int    jsb_log_quote(jsb_t *sb, const char *s, size_t len);
