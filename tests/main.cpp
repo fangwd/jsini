@@ -737,6 +737,7 @@ extern "C" {
     void test_jsa();
     void test_jsh();
     void test_utf8();
+    void test_csv();
 }
 
 void test_jsl();
@@ -754,6 +755,10 @@ int main(int argc, char** argv) {
 
     if (spec == "all" || spec == "utf8") {
         test_jsh();
+    }
+    
+    if (spec == "all" || spec == "csv") {
+        test_csv();
     }
 
     if (spec == "all" || spec == "") {
