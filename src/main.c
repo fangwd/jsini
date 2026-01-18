@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
     int print_options = 0;
     int parse_ini = 0;
     int parse_jsonl = 0;
+    int parse_csv = 0;
     int replace = 0;
     const char *key = NULL;
 
@@ -23,6 +24,7 @@ int main(int argc, char **argv) {
            {"from",        required_argument,  0, 'f'},
            {"ini",         no_argument,        0, 'i'},
            {"jsonl",       no_argument,        0, 'L'},
+           {"csv",         no_argument,        0, 'c'},
            {"key",         required_argument,  0, 'k'},
            {"to",          required_argument,  0, 't'},
            {"output",      required_argument,  0, 'o'},
@@ -51,7 +53,10 @@ int main(int argc, char **argv) {
        case 'L':
            parse_jsonl = 1;
            break;
-       case 'k':
+       case 'c':
+           parse_csv = 1;
+           break;
+        case 'k':
            key = optarg;
            break;
        case 't':
@@ -104,7 +109,9 @@ int main(int argc, char **argv) {
       while((n = fread(buf, 1, sizeof(buf), stdin)) > 0) {
         jsb_append(sb, buf, n);
       }
-      jsini_value_t *value = parse_jsonl ? jsini_parse_string_jsonl(sb->data, sb->size) : jsini_parse_string(sb->data, sb->size);
+      jsini_value_t *value = parse_jsonl ? jsini_parse_string_jsonl(sb->data, sb->size)
+                             : parse_csv ? jsini_parse_string_csv(sb->data, sb->size)
+                                         : jsini_parse_string(sb->data, sb->size);
       jsini_print(stdout, value, print_options);
       jsini_free(value);
       jsb_free(sb);

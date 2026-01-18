@@ -44,6 +44,12 @@ extern "C" {
 #define JSINI_ESCAPE_UNICODE    4
 #define JSINI_PHP_EXPORT        8
 
+// CSV Options
+#define JSINI_CSV_TAB           1 // default comma
+#define JSINI_CSV_HEADER        2
+#define JSINI_CSV_DOUBLE_QUOTE  4
+#define JSINI_CSV_DEFAULT (JSINI_CSV_HEADER | JSINI_CSV_DOUBLE_QUOTE)
+
 #include <stdint.h>
 #include <stdio.h>
 #include <limits.h>
@@ -153,6 +159,7 @@ const char* jsini_select_string(const jsini_object_t *object, const char *path);
 jsini_value_t *jsini_parse_string(const char *s, uint32_t len);
 jsini_value_t *jsini_parse_string_ini(const char *s, uint32_t len);
 jsini_value_t *jsini_parse_string_jsonl(const char *s, uint32_t len);
+jsini_value_t *jsini_parse_string_csv(const char *s, uint32_t len);
 jsini_value_t *jsini_parse_file(const char *);
 #define jsini_parse_object_file(s) ((jsini_object_t*)jsini_parse_file(s))
 jsini_value_t *jsini_parse_file_ini(const char *);
@@ -161,7 +168,7 @@ jsini_value_t *jsini_parse_file_jsonl(const char *);
 typedef int (*jsini_jsonl_cb)(jsini_value_t *value, void *user_data);
 int jsini_parse_file_jsonl_ex(const char *file, jsini_jsonl_cb cb, void *user_data);
 
-int jsini_parse_file_csv_ex(const char *file, char delimiter, int has_header, jsini_jsonl_cb cb, void *user_data);
+int jsini_parse_file_csv_ex(const char *file, int flags, jsini_jsonl_cb cb, void *user_data);
 int jsini_print_file_csv(const char *file, const jsini_value_t *value, char delimiter);
 
 void           jsini_print(FILE *, const jsini_value_t *, int options);
