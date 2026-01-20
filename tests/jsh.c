@@ -286,6 +286,7 @@ static void test__iterate() {
     jsh_put(tiny, (const void *) "k-8", "v-8");
     print_entries(tiny);
 
+    jsh_free(tiny);
 }
 
 static void test__create2();

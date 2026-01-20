@@ -738,6 +738,7 @@ extern "C" {
     void test_jsh();
     void test_utf8();
     void test_csv();
+    void test_jsini_c();
 }
 
 void test_jsl();
@@ -761,7 +762,12 @@ int main(int argc, char** argv) {
         test_csv();
     }
 
+    if (spec == "jsini_c") {
+        test_jsini_c();
+    }
+
     if (spec == "all" || spec == "") {
+        test_jsini_c();
         test_parsing();
         test_types();
         test_building();

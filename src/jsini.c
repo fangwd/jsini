@@ -556,6 +556,19 @@ void jsini_remove(jsini_object_t *object, const char *key) {
     }
 }
 
+jsini_value_t *jsini_remove_value(jsini_object_t *object, const char *key) {
+    jsini_attr_t *attr = (jsini_attr_t *) jsh_get(object->map, key);
+    if (attr) {
+        jsini_value_t *val = attr->value;
+        attr->value = NULL;
+        jsh_remove(object->map, key);
+        jsa_remove_first(&object->keys, (JSA_TYPE) attr);
+        jsini_free_attr(attr);
+        return val;
+    }
+    return NULL;
+}
+
 double jsini_cast_double(const jsini_value_t *js) {
     switch (js->type) {
     case JSINI_TINTEGER:

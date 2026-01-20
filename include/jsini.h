@@ -144,6 +144,7 @@ jsini_object_t *jsini_set_buffer(jsini_object_t*, const char *, jsb_t *);
 const char *jsini_set_string(jsini_object_t*, const char *, const char *);
 jsini_value_t *jsini_set_value(jsini_object_t*, const char *, jsini_value_t*);
 void jsini_remove(jsini_object_t *, const char *);
+jsini_value_t *jsini_remove_value(jsini_object_t *, const char *);
 
 #define jsini_type(value) (((jsini_value_t*)(value))->type)
 const char *jsini_type_name(uint8_t type);
