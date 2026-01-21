@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
            {0, 0, 0, 0}
        };
 
-       static const char *opts = "af:g:k:iLt:o:prS";
+       static const char *opts = "af:g:k:iLct:o:prS";
 
        int n = 0;
        int c = getopt_long (argc, argv, opts, options, &n);
@@ -79,9 +79,15 @@ int main(int argc, char **argv) {
 
     if (optind < argc) {
         const char *file = argv[optind++];
-        jsini_value_t *value = parse_ini ? jsini_parse_file_ini(file) :
-                (parse_jsonl ? jsini_parse_file_jsonl(file) : jsini_parse_file(file));
-        if (value != NULL) {
+        jsini_value_t *value = parse_ini
+                                 ? jsini_parse_file_ini(file)
+                                 : (parse_jsonl
+                                    ? jsini_parse_file_jsonl(file)
+                                    : (parse_csv
+                                        ? jsini_parse_file_csv(file)
+                                        : jsini_parse_file(file)));
+        if (value != NULL)
+        {
             if (key) {
                 jsini_print(stdout, jsini_select((jsini_object_t*)value, key), 0);
             }

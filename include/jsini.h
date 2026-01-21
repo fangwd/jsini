@@ -170,6 +170,7 @@ typedef int (*jsini_jsonl_cb)(jsini_value_t *value, void *user_data);
 int jsini_parse_file_jsonl_ex(const char *file, jsini_jsonl_cb cb, void *user_data);
 
 int jsini_parse_file_csv_ex(const char *file, int flags, jsini_jsonl_cb cb, void *user_data);
+jsini_value_t *jsini_parse_file_csv(const char *);
 int jsini_print_file_csv(const char *file, const jsini_value_t *value, char delimiter);
 
 void           jsini_print(FILE *, const jsini_value_t *, int options);

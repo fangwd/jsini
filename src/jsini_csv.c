@@ -268,6 +268,24 @@ int jsini_parse_file_csv_ex(const char *file, int flags, jsini_jsonl_cb cb, void
     return res;
 }
 
+static int csv_collect_cb(jsini_value_t *val, void *user_data)
+{
+    jsini_array_t *array = (jsini_array_t *)user_data;
+    jsini_push_value(array, val);
+    return JSINI_OK;
+}
+
+jsini_value_t *jsini_parse_file_csv(const char *file)
+{
+    jsini_array_t *array = jsini_alloc_array();
+    if (jsini_parse_file_csv_ex(file, JSINI_CSV_DEFAULT, csv_collect_cb, array) != JSINI_OK)
+    {
+        jsini_free_array(array);
+        return NULL;
+    }
+    return (jsini_value_t *)array;
+}
+
 static void csv_append_string(jsb_t *sb, const char *s, char delimiter)
 {
     int needs_quote = 0;
