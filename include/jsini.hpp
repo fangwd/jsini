@@ -215,7 +215,7 @@ public:
         return (float) jsini_cast_double(value);
     }
 
-    operator const char *() const {
+    explicit operator const char *() const {
         jsini_value_t *value = node_->value();
         if (value->type != JSINI_TSTRING) {
             return nullptr;
@@ -437,6 +437,14 @@ public:
 
     Value& operator[](uint32_t index) {
         return get(index);
+    }
+
+    Value& operator[](int index) {
+        return get((uint32_t)index);
+    }
+
+    Value& operator[](size_t index) {
+        return get((uint32_t)index);
     }
 
     Value& get(uint32_t index) {
