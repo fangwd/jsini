@@ -12,7 +12,7 @@
 #include <string.h>
 
 #ifdef _WIN32
-typedef unsigned __int32 u_int32_t;
+typedef unsigned __int32 uint32_t;
 typedef unsigned __int32 uint32_t;
 #define strcasecmp _stricmp
 #endif
@@ -372,7 +372,7 @@ HASH jsh_hash_cstr(const void *key) {
     unsigned char *s = (unsigned char *) key;
     HASH h = 2166136261;
     while (*s) {
-        h ^= (u_int32_t) *s++;
+        h ^= (uint32_t) *s++;
         h *= (HASH) 0x01000193;
     }
     return h;
@@ -387,7 +387,7 @@ static HASH jsh_string_hasher_caseless(const void *key) {
     while (*s) {
         char c;
         c = tolower(*s++);
-        h ^= (u_int32_t) c;
+        h ^= (uint32_t) c;
         h *= (HASH) 0x01000193;
     }
     return h;
