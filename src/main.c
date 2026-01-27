@@ -10,12 +10,33 @@
 #include <errno.h>
 #include <string.h>
 
+typedef struct {
+    jsini_key_stats_map_t *stats;
+    size_t line_count;
+} stats_context_t;
+
+static int stats_callback(jsini_value_t *value, void *user_data) {
+    stats_context_t *ctx = (stats_context_t *)user_data;
+    jsini_collect_key_stats(value, ctx->stats);
+    jsini_free(value);
+
+    ctx->line_count++;
+    if (ctx->line_count % 1000 == 0) {
+        fprintf(stderr, "Processed %zu lines\n", ctx->line_count);
+    }
+
+    return JSINI_OK;
+}
+
 int main(int argc, char **argv) {
     int print_options = 0;
     int parse_ini = 0;
     int parse_jsonl = 0;
     int parse_csv = 0;
     int replace = 0;
+    int print_stats = 0;
+    int max_level = -1;  // -1 means unlimited
+    double min_ratio = 0.0;  // 0.0 means no minimum
     const char *key = NULL;
 
     while (1) {
@@ -31,10 +52,13 @@ int main(int argc, char **argv) {
            {"pretty",      no_argument,        0, 'p'},
            {"sort",        no_argument,        0, 'S'},
            {"replace",     no_argument,        0, 'r'},
+           {"stats",       no_argument,        0, 's'},
+           {"level",       required_argument,  0, 'l'},
+           {"min-ratio",   required_argument,  0, 'm'},
            {0, 0, 0, 0}
        };
 
-       static const char *opts = "af:g:k:iLct:o:prS";
+       static const char *opts = "af:g:k:iLct:o:prSsl:m:";
 
        int n = 0;
        int c = getopt_long (argc, argv, opts, options, &n);
@@ -72,6 +96,15 @@ int main(int argc, char **argv) {
        case 'r':
            replace = 1;
            break;
+       case 's':
+           print_stats = 1;
+           break;
+       case 'l':
+           max_level = atoi(optarg);
+           break;
+       case 'm':
+           min_ratio = atof(optarg);
+           break;
        default:
            return 1;
        }
@@ -79,6 +112,23 @@ int main(int argc, char **argv) {
 
     if (optind < argc) {
         const char *file = argv[optind++];
+
+        if (print_stats && (parse_jsonl || parse_csv)) {
+            jsini_key_stats_map_t *stats = jsh_create_simple(0, 0);
+            stats_context_t ctx = { stats, 0 };
+            if (parse_jsonl) {
+                jsini_parse_file_jsonl_ex(file, stats_callback, &ctx);
+            } else {
+                jsini_parse_file_csv_ex(file, JSINI_CSV_DEFAULT, stats_callback, &ctx);
+            }
+            if (ctx.line_count > 0) {
+                fprintf(stderr, "Total: %zu lines processed\n", ctx.line_count);
+            }
+            jsini_print_key_stats(stdout, stats, max_level, min_ratio);
+            jsini_free_key_stats_map(stats);
+            return 0;
+        }
+
         jsini_value_t *value = parse_ini
                                  ? jsini_parse_file_ini(file)
                                  : (parse_jsonl
@@ -88,7 +138,13 @@ int main(int argc, char **argv) {
                                         : jsini_parse_file(file)));
         if (value != NULL)
         {
-            if (key) {
+            if (print_stats) {
+                jsini_key_stats_map_t *stats = jsh_create_simple(0, 0);
+                jsini_collect_key_stats(value, stats);
+                jsini_print_key_stats(stdout, stats, max_level, min_ratio);
+                jsini_free_key_stats_map(stats);
+            }
+            else if (key) {
                 jsini_print(stdout, jsini_select((jsini_object_t*)value, key), 0);
             }
             else {
@@ -118,10 +174,21 @@ int main(int argc, char **argv) {
       jsini_value_t *value = parse_jsonl ? jsini_parse_string_jsonl(sb->data, sb->size)
                              : parse_csv ? jsini_parse_string_csv(sb->data, sb->size)
                                          : jsini_parse_string(sb->data, sb->size);
-      jsini_print(stdout, value, print_options);
-      jsini_free(value);
+      if (value != NULL) {
+          if (print_stats) {
+              jsini_key_stats_map_t *stats = jsh_create_simple(0, 0);
+              jsini_collect_key_stats(value, stats);
+              jsini_print_key_stats(stdout, stats, max_level, min_ratio);
+              jsini_free_key_stats_map(stats);
+          }
+          else {
+              jsini_print(stdout, value, print_options);
+          }
+          jsini_free(value);
+      }
       jsb_free(sb);
     }
+
 
     return 0;
 }

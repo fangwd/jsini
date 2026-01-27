@@ -220,6 +220,39 @@ int32_t json_unescape_unicode(const char *start, const char *end, int32_t *ch);
 int32_t decode_utf8(const char *s, int32_t *ch);
 int32_t encode_utf8(int32_t ch, char *buffer);
 
+typedef struct jsini_key_stats {
+    size_t object_count;
+    jsh_t *key_frequencies; // key -> occurrence count
+} jsini_key_stats_t;
+
+jsini_key_stats_t* jsini_alloc_key_stats();
+void jsini_free_key_stats(jsini_key_stats_t*);
+
+// path_key (char*) -> jsini_key_stats_t*
+typedef jsh_t jsini_key_stats_map_t;
+
+/**
+ * Recursively traverses a jsini value and aggregates object key occurrence
+ * statistics into `stats`. For each object encountered (including objects
+ * inside arrays), increments the per-key frequency and total object count.
+ */
+void jsini_collect_key_stats(jsini_value_t* value, jsini_key_stats_map_t* stats);
+
+/**
+ * Prints the collected key statistics in a human-readable format to the
+ * specified file stream.
+ * @param out Output file stream
+ * @param stats Key statistics map
+ * @param max_level Maximum depth level to print (0 = root only, -1 = unlimited)
+ * @param min_ratio Minimum occurrence ratio to print (0.0 to 1.0)
+ */
+void jsini_print_key_stats(FILE* out, jsini_key_stats_map_t* stats, int max_level, double min_ratio);
+
+/**
+ * Frees a key statistics map and all its entries.
+ */
+void jsini_free_key_stats_map(jsini_key_stats_map_t* stats);
+
 #ifdef __cplusplus
 }
 #endif

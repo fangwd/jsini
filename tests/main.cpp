@@ -742,6 +742,7 @@ extern "C" {
 }
 
 void test_jsl();
+void test_stats();
 
 int main(int argc, char** argv) {
     std::string spec(argc > 1 ? argv[1] : "");
@@ -764,6 +765,10 @@ int main(int argc, char** argv) {
 
     if (spec == "jsini_c") {
         test_jsini_c();
+    }
+
+    if (spec == "all" || spec == "stats") {
+        test_stats();
     }
 
     if (spec == "all" || spec == "") {
