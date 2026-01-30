@@ -252,6 +252,9 @@ static int jsini_read_json_utf8(jsl_t *lex, int offset, jsb_t *s) {
     else {
         char data[4];
         int n = encode_utf8(c, data);
+        if (n <= 0) {
+            return (lex->error = JSINI_ERROR_ESCAPE);
+        }
         jsb_append(s, data, n);
         lex->input += m + offset;
         return JSINI_OK;
@@ -438,7 +441,8 @@ void jsini_write_string(jsb_t *sb, jsb_t *s, int options) {
         return;
     }
 
-    for (c = *p; p < q; c = *++p) {
+    for (; p < q; p++) {
+        c = *p;
         switch (c) {
         case '\"':
             jsb_append(sb, "\\\"", 2);
@@ -466,7 +470,16 @@ void jsini_write_string(jsb_t *sb, jsb_t *s, int options) {
                 jsb_printf(sb, "\\u%04x", c);
             } else if ((c & 0x80) && (options & JSINI_ESCAPE_UNICODE)) {
                 int32_t ch, n;
-                if ((n = decode_utf8(p, &ch)) > 0) {
+                int needed = 1;
+                unsigned char c0 = (unsigned char)c;
+                if ((c0 & 0xE0) == 0xC0) {
+                    needed = 2;
+                } else if ((c0 & 0xF0) == 0xE0) {
+                    needed = 3;
+                } else if ((c0 & 0xF8) == 0xF0) {
+                    needed = 4;
+                }
+                if ((q - p) >= needed && (n = decode_utf8(p, &ch)) > 0) {
                     char buf[12];
                     p += n - 1;
                     n = json_escape_unicode(ch, buf);
@@ -656,4 +669,3 @@ int jsini_print_file(const char *filename, const jsini_value_t *value, int optio
 
     return fclose(fp);
 }
-

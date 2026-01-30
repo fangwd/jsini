@@ -103,7 +103,15 @@ static void test_hash_comment() {
     assert(value["tags"].size() == 2);
 }
 
+static void test_trailing_slash() {
+    std::string text = "/";
+    jsini::Value value(text);
+    assert(value.is_string());
+    assert(value == "/");
+}
+
 void test_jsl() {
   test_hash_comment();
   test_read_env_vars();
+  test_trailing_slash();
 }

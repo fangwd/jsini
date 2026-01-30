@@ -35,7 +35,7 @@ int jsa_alloc(jsa_t * a, uint32_t size) {
 
         size = ((size + 31) / 32) * 32;
         if (size > JSA_MAX_SIZE) {
-            size = JSA_MAX_SIZE;
+            return JSA_ERROR;
         }
 
         if (a->alloc_size >= size) {
@@ -82,7 +82,9 @@ void jsa_free_ex(jsa_t * a, void (*free_item)(JSA_TYPE)) {
 
 void jsa_append(jsa_t *a, JSA_TYPE m) {
     if (a->size >= a->alloc_size) {
-        jsa_alloc(a, a->size + 1);
+        if (jsa_alloc(a, a->size + 1) != JSA_OK) {
+            return;
+        }
     }
     assert (a->size < a->alloc_size);
     a->item[a->size++] = m;
@@ -157,15 +159,15 @@ void jsa_dedup(jsa_t *a) {
  * Removes the element at index N.
  */
 JSA_TYPE jsa_remove(jsa_t *a, uint32_t n) {
-    uint32_t i;
     JSA_TYPE t;
 
     assert(n < a->size);
 
     t = a->item[n];
 
-    for (i = n + 1; i < a->size; i++) {
-        a->item[i - 1] = a->item[i];
+    if (n + 1 < a->size) {
+        memmove(&a->item[n], &a->item[n + 1],
+                (a->size - n - 1) * sizeof(a->item[0]));
     }
 
     a->size--;

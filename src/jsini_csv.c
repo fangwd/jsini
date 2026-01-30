@@ -25,10 +25,12 @@ static int try_parse_csv_record(const char *buffer, size_t len, int flags, jsini
     const char *p = buffer;
     const char *end = buffer + len;
     char delimiter = (flags & JSINI_CSV_TAB) ? '\t' : ',';
+    jsb_t sb;
+    jsb_init(&sb);
 
     while (p < end)
     {
-        jsb_t *sb = jsb_create();
+        jsb_clear(&sb);
         char quote_char = 0;
 
         if (flags & JSINI_CSV_DOUBLE_QUOTE)
@@ -55,7 +57,7 @@ static int try_parse_csv_record(const char *buffer, size_t len, int flags, jsini
                 {
                     if (p + 1 < end && *(p + 1) == quote_char)
                     {
-                        jsb_append_char(sb, quote_char);
+                        jsb_append_char(&sb, quote_char);
                         p += 2;
                     }
                     else
@@ -67,13 +69,13 @@ static int try_parse_csv_record(const char *buffer, size_t len, int flags, jsini
                 }
                 else
                 {
-                    jsb_append_char(sb, *p++);
+                    jsb_append_char(&sb, *p++);
                 }
             }
 
             if (!closed)
             {
-                jsb_free(sb);
+                jsb_clean(&sb);
                 jsini_free_array(row);
                 return JSINI_CSV_INCOMPLETE;
             }
@@ -87,12 +89,11 @@ static int try_parse_csv_record(const char *buffer, size_t len, int flags, jsini
             // Unquoted
             while (p < end && *p != delimiter && *p != '\n' && *p != '\r')
             {
-                jsb_append_char(sb, *p++);
+                jsb_append_char(&sb, *p++);
             }
         }
 
-        jsini_push_string(row, sb->data, sb->size);
-        jsb_free(sb);
+        jsini_push_string(row, sb.data, sb.size);
 
         if (p < end)
         {
@@ -115,6 +116,7 @@ static int try_parse_csv_record(const char *buffer, size_t len, int flags, jsini
         }
     }
 
+    jsb_clean(&sb);
     *out_row = row;
     return JSINI_OK;
 }

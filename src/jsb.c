@@ -198,7 +198,9 @@ int jsb_printf(jsb_t * sb, const char *fmt, ...) {
         assert (sb->size + space > sb->alloc_size);
 
         if (jsb_alloc(sb, sb->size + space) != JSB_OK) {
-            sb->data[sb->size] = '\0';
+            if (sb->data) {
+                sb->data[sb->size] = '\0';
+            }
             return JSB_ERROR;
         }
     }
@@ -357,4 +359,3 @@ int jsb_log_quote(jsb_t *sb, const char *s, size_t len) {
 
 	return JSB_OK;
 }
-

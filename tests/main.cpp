@@ -249,6 +249,19 @@ void test_dumping() {
             assert(to_string(value, JSINI_PRETTY_PRINT, 1) == "[\n 1,\n [\n  2,\n  3,\n  [\n   4\n  ],\n  []\n ]\n]");
         }
     }
+    {
+        jsini::Value value(std::string("\"\""));
+        assert(to_string(value) == "\"\"");
+    }
+    {
+        std::string bad;
+        bad.push_back((char)0xE2);
+        jsini::Value value(bad);
+        std::string dumped = to_string(value, JSINI_ESCAPE_UNICODE);
+        assert(dumped.size() == 3);
+        assert(dumped[0] == '"');
+        assert(dumped[2] == '"');
+    }
 }
 
 void test_type_cast() {
@@ -743,6 +756,7 @@ extern "C" {
 
 void test_jsl();
 void test_stats();
+void test_clone();
 
 int main(int argc, char** argv) {
     std::string spec(argc > 1 ? argv[1] : "");
@@ -786,6 +800,7 @@ int main(int argc, char** argv) {
         test_lineno();
         test_jsonl();
         test_jsl();
+        test_clone();
     }
 
     std::cout << "All tests passed!" << std::endl;

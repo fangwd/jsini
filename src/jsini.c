@@ -304,6 +304,10 @@ void jsl_skip_space(jsl_t *lex, const char *seps) {
                 jsl_skip_line(lex);
             } else if (c == '/') {
                 lex->input++;
+                if (lex->input == lex->input_end) {
+                    lex->input--;
+                    break;
+                }
                 c = *lex->input;
                 if (c == '/') {
                     jsl_skip_line(lex);
@@ -387,6 +391,9 @@ jsini_array_t *jsini_get_array(jsini_object_t *object, const char *name) {
 jsini_value_t *jsini_select(const jsini_object_t *object, const char *name) {
     jsini_attr_t *attr = NULL;
     char *buffer = strdup(name);
+    if (!buffer) {
+        return NULL;
+    }
     char *p = buffer, c = *name;
 
     while (c) {

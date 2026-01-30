@@ -15,6 +15,7 @@ add_library(libjsini STATIC
   src/jsini_json.c
   src/jsini_csv.c
   src/util.c
+  src/jsini_clone.c
 )
 set_target_properties(libjsini PROPERTIES OUTPUT_NAME "jsini")
 target_include_directories(libjsini
@@ -32,9 +33,11 @@ add_executable(test
     tests/jsh.c
     tests/utf8.c
     tests/jsl.cpp
+    tests/test_clone.cpp
     tests/test_csv.c
     tests/test_jsini.c
     tests/test_stats.cpp
     tests/main.cpp
 )
 target_link_libraries(test PRIVATE libjsini)
+

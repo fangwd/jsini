@@ -106,6 +106,9 @@ jsh_t *
 jsh_create2(uint32_t n, Hasher2 h, Tester2 t, void* a, float f)
 {
     jsh_t *ht = jsh_create(n, (Hasher) h, (Tester) t, f);
+    if (!ht) {
+        return NULL;
+    }
     ht->arg = a;
     return ht;
 }
@@ -435,10 +438,16 @@ void jsh_free_ex(jsh_t *t, void (*free_item)(void *, void *)) {
 
 void jsh_dump(jsh_t *t, char *buf, int length) {
     uint32_t i, so;
+    if (length <= 0) {
+        return;
+    }
     *buf = '\0';
     for (i = 0, so = 0; i < t->size; i++) {
         Slot *slot = &t->slot[i];
         if (slot->taken) {
+            if (so >= (uint32_t)length) {
+                break;
+            }
             so += snprintf(buf + so, length - so, "(%d,%d,%d)", i,
                     slot->hash, slot->next ? (int)(slot->next - t->slot) : -1);
         }
