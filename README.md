@@ -27,6 +27,7 @@ A C/C++ library that parses json-like (including json) data. It comes with a C++
   }
   ```
 - Object keys can be optionally sorted when exporting (similar to Python's `sort_keys` option in their `json.dumps`).
+- Stream JSON-safe string literals with the lightweight `jsini::str` helper.
 - No dependencies. The library is written in pure C and only requires the standard C runtime.
 - Reusable components. The hash table, array and string buffer in the source code can be used on their own without relying on other parts of the library. See `jsh.h`, `jsa.h` and `jsb.h` for their API.
 
@@ -129,6 +130,9 @@ value.dump(std::cout, JSINI_PRETTY_PRINT, 4);
 
 // Same as above but with object keys sorted in output
 value.dump(std::cout, JSINI_PRETTY_PRINT|JSINI_SORT_KEYS, 4);
+
+// Escape an arbitrary string literal and stream it as JSON
+std::cout << jsini::str("foo\nbar"); // prints "foo\\nbar"
 ```
 
 ## Bugs

@@ -745,6 +745,64 @@ private:
     };
 };
 
+struct str {
+    const char *s;
+    size_t len;
+    str(const std::string &s) : str(s.data(), s.length()) {}
+    str(const char *s) : str(s, strlen(s)) {}
+    str(const char *s, size_t len) : s(s), len(len) {}
+};
+
+inline std::ostream &operator<<(std::ostream &os, const str &s) {
+    const char *p = s.s;
+    const char *q = s.s + s.len;
+
+    os << '"';
+
+    for (; p < q; ++p) {
+        char c = *p;
+        switch (c) {
+            case '\"':
+                os << "\\\"";
+                break;
+            case '\\':
+                os << "\\\\";
+                break;
+            case '/':
+                os << "\\/";
+                break;
+            case '\b':
+                os << "\\b";
+                break;
+            case '\f':
+                os << "\\f";
+                break;
+            case '\n':
+                os << "\\n";
+                break;
+            case '\r':
+                os << "\\r";
+                break;
+            case '\t':
+                os << "\\t";
+                break;
+            default:
+                if (c >= 0 && c <= 0x1F) {
+                    char buf[8];
+                    snprintf(buf, sizeof(buf), "\\u%04x", c);
+                    os << buf;
+                } else {
+                    os << c;
+                }
+                break;
+        }
+    }
+
+    os << '"';
+
+    return os;
+}
+
 } // namespace jsini
 
 #endif // JSINI_HPP_
