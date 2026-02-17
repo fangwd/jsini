@@ -9,6 +9,9 @@
 #include <vector>
 #include <map>
 #include <functional>
+#include <cstdint>
+#include <limits>
+#include <type_traits>
 
 #include "jsini.h"
 
@@ -70,6 +73,43 @@ private:
         }
 
         return (jsini_object_t *) value;
+    }
+
+    Value& assign_integer(int64_t data) {
+        jsini_value_t *value = node_->value();
+        if (value->type == JSINI_TINTEGER) {
+            ((jsini_integer_t*) value)->data = data;
+        } else {
+            value = (jsini_value_t*) jsini_alloc_integer(data);
+            node_->set_value(value);
+        }
+        return *this;
+    }
+
+    Value& assign_number(double data) {
+        jsini_value_t *value = node_->value();
+        if (value->type == JSINI_TNUMBER) {
+            ((jsini_number_t*) value)->data = data;
+        } else {
+            value = (jsini_value_t*) jsini_alloc_number(data);
+            node_->set_value(value);
+        }
+        return *this;
+    }
+
+    template<typename T>
+    T cast_integral() const {
+        jsini_value_t *value = node_->value();
+        switch (value->type) {
+        case JSINI_TBOOL:
+            return static_cast<T>(((jsini_bool_t*) value)->data);
+        case JSINI_TINTEGER:
+            return static_cast<T>(((jsini_integer_t*) value)->data);
+        case JSINI_TNUMBER:
+            return static_cast<T>(((jsini_number_t*) value)->data);
+        default:
+            return static_cast<T>(0);
+        }
     }
 
     inline bool is_root() const{
@@ -201,8 +241,15 @@ public:
     }
 
     operator int() const {
-        jsini_value_t *value = node_->value();
-        return jsini_cast_int(value);
+        return cast_integral<int>();
+    }
+
+    explicit operator long long() const {
+        return cast_integral<long long>();
+    }
+
+    explicit operator unsigned long long() const {
+        return cast_integral<unsigned long long>();
     }
 
     operator double() const {
@@ -348,7 +395,18 @@ public:
     }
 
     bool operator==(int value) {
-        return this->operator int() == value;
+        return cast_integral<int64_t>() == static_cast<int64_t>(value);
+    }
+
+    bool operator==(long long value) {
+        return cast_integral<int64_t>() == static_cast<int64_t>(value);
+    }
+
+    bool operator==(unsigned long long value) {
+        if (value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+             return static_cast<double>(*this) == static_cast<double>(value);
+        }
+        return cast_integral<int64_t>() == static_cast<int64_t>(value);
     }
 
     bool operator==(double value) {
@@ -372,13 +430,13 @@ public:
         case JSINI_TNULL:
             return true;
         case JSINI_TBOOL:
-            return operator==(other.operator bool());
+            return (bool)*this == (bool)other;
         case JSINI_TINTEGER:
-            return operator==(other.operator int());
+            return cast_integral<int64_t>() == other.cast_integral<int64_t>();
         case JSINI_TNUMBER:
-            return operator==(other.operator double());
+            return (double)*this == (double)other;
         case JSINI_TSTRING:
-            return operator==(other.operator const char *());
+            return operator==((const char *)other);
         default:
             return false;
         }
@@ -395,26 +453,16 @@ public:
         return *this;
     }
 
-    Value& operator=(int data) {
-        jsini_value_t *value = node_->value();
-        if (value->type == JSINI_TINTEGER) {
-            ((jsini_integer_t*) value)->data = data;
-        } else {
-            value = (jsini_value_t*) jsini_alloc_integer(data);
-            node_->set_value(value);
+    template<typename T, typename std::enable_if<std::is_integral<T>::value && !std::is_same<T, bool>::value, int>::type = 0>
+    Value& operator=(T data) {
+        if (sizeof(T) > sizeof(int64_t) || (std::is_unsigned<T>::value && static_cast<uint64_t>(data) > static_cast<uint64_t>(std::numeric_limits<int64_t>::max()))) {
+             return assign_number(static_cast<double>(data));
         }
-        return *this;
+        return assign_integer(static_cast<int64_t>(data));
     }
 
     Value& operator=(double data) {
-        jsini_value_t *value = node_->value();
-        if (value->type == JSINI_TNUMBER) {
-            ((jsini_number_t*) value)->data = data;
-        } else {
-            value = (jsini_value_t*) jsini_alloc_number(data);
-            node_->set_value(value);
-        }
-        return *this;
+        return assign_number(data);
     }
 
     Value& operator=(const char *data) {
@@ -433,6 +481,10 @@ public:
             node_->set_value(value);
         }
         return *this;
+    }
+
+    Value& operator=(const std::string &data) {
+        return operator=(data.c_str());
     }
 
     Value& operator[](uint32_t index) {
@@ -484,10 +536,15 @@ public:
         return *root_->allocate((jsini_value_t*)array, index);
     }
 
-    Value &push(int value) {
+    template<typename T, typename std::enable_if<std::is_integral<T>::value && !std::is_same<T, bool>::value, int>::type = 0>
+    Value &push(T data) {
         jsini_array_t *array = cast_array();
         uintptr_t index = (uintptr_t)jsini_array_size(array);
-        jsini_push_integer(array, value);
+        if (sizeof(T) > sizeof(int64_t) || (std::is_unsigned<T>::value && static_cast<uint64_t>(data) > static_cast<uint64_t>(std::numeric_limits<int64_t>::max()))) {
+             jsini_push_number(array, static_cast<double>(data));
+        } else {
+             jsini_push_integer(array, static_cast<int64_t>(data));
+        }
         return *root_->allocate((jsini_value_t*)array, index);
     }
 
