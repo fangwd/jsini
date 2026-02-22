@@ -104,6 +104,8 @@ int jsa_resize(jsa_t *a, uint32_t size) {
         if (jsa_alloc(a, size) != JSA_OK) {
         	return JSA_ERROR;
         }
+    }
+    if (size > a->size) {
         memset(a->item + a->size, 0, (size - a->size) * sizeof(a->item[0]));
     }
     else if (size < a->size) {
